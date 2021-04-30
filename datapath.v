@@ -106,6 +106,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign address1 = PC;
 //address1_reg;
 
+	//assign for ID data
+	assign inputPC_IDEX = outputPC_IFID;
+	assign inputData1_IDEX = data1;
+	assign inputData2_IDEX = data2;
+	//inputImm_IDEX already assigned from IMMmodule
+	assign inputInstr_IDEX = outputIR_IFID;
+	assign inputWB_IDEX = outputIR_IFID[7:6];//write can happen to rd or rt, we need control paths too
+
 	//assign for MEM data 
 	assign inputWB_MEMWB = outputWB_IDEX;
 	assign address2 = outputALUOUT_EXMEM;
