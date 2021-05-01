@@ -54,12 +54,15 @@ module IFID (clk, inputIR, inputPC, outputIR, outputPC);
 	
 endmodule
 
-module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB);
+module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB, inputWWD, outputWWD);
 	input clk;
 	input [`WORD_SIZE - 1 : 0] inputPC, inputData1, inputData2, inputImm, inputInstr;
 	input [1 : 0] inputWB;
 	output reg [`WORD_SIZE - 1 : 0] outputPC, outputData1, outputData2, outputImm, outputInstr;
 	output reg [1 : 0] outputWB;
+
+	input [`WORD_SIZE - 1 : 0] inputWWD;
+	output reg [`WORD_SIZE - 1 : 0] outputWWD;
 	
 	initial begin 
 		outputPC = 0; 
@@ -77,16 +80,20 @@ module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB
 		outputImm <= inputImm;  
 		outputInstr <= inputInstr;  
 		outputWB <= inputWB;
+		outputWWD <= inputWWD;
 	end
 
 endmodule
 
-module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, outputPC, outputWB);
+module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, outputPC, outputWB, inputWWD, outputWWD);
 	input clk;
 	input [15:0] inputPC, inputALUOUT, inputB; 
 	input [1 : 0] inputWB;
 	output reg [15:0] outputB, outputALUOUT, outputPC;
 	output reg [1 : 0] outputWB;
+
+	input [15:0] inputWWD;
+	output reg [15:0]outputWWD;
 	
 	initial begin
 		outputB = 0;
@@ -97,15 +104,19 @@ module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, 
 		outputALUOUT <= inputALUOUT;
 		outputPC <= inputPC;
 		outputWB <= inputWB;
+		outputWWD <= inputWWD;
 	end
 endmodule
 
-module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, outputALUResult, outputWB);
+module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, outputALUResult, outputWB, inputWWD, outputWWD);
 	input clk;
 	input [15:0] inputReadData, inputALUResult;
 	input [1 : 0] inputWB;
 	output reg [15:0] outputReadData, outputALUResult;
 	output reg [1 : 0]outputWB;
+
+	input [15:0] inputWWD;
+	output reg [15:0] outputWWD;
 
 	initial begin
 		outputReadData = 0;
@@ -117,6 +128,7 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 		outputReadData <= inputReadData;
 		outputALUResult <= inputALUResult;
 		outputWB <= inputWB;
+		outputWWD <= inputWWD;
 	end
 	
 endmodule

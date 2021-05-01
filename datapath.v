@@ -54,13 +54,16 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	// Register
 	reg [`WORD_SIZE - 1 : 0] PC;
+
+	//wire for wwd
+	wire [15:0] outputWWD_ID, outputWWD_EX, outputWWD_MEM;
 	
 	// pipeline register_modules
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID);
-	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
+	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX,inputData1_IDEX,outputWWD_ID);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
-	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM);
-	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB);
+	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM,outputWWD_ID, outputWWD_EX );
+	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM);
 
 	//wire for control unit
 	wire [3:0] opcode;
@@ -96,6 +99,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [`WORD_SIZE-1:0] write_data;
 	wire [`WORD_SIZE-1:0] read_out1;
 	wire [`WORD_SIZE-1:0] read_out2;
+
+
 
 	// assign for IF data
 	assign inputIR_IFID = data1;
@@ -149,17 +154,17 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	// control reg wires
 	// ID / EX control
-	wire pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
+	// wire pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
 	wire pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o, pc_src_o, pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 	
 	//EX/ MEM control
-	wire pc_write_cond_i_E, pc_write_i_E, i_or_d_i_E, mem_read_i_E, mem_to_reg_i_E;
-	wire mem_write_i_E, ir_write_i_E, pc_to_reg_i_E, pc_src_i_E, halt_i_E, wwd_i_E, new_inst_i_E, reg_write_i_E;
+	// wire pc_write_cond_i_E, pc_write_i_E, i_or_d_i_E, mem_read_i_E, mem_to_reg_i_E;
+	// wire mem_write_i_E, ir_write_i_E, pc_to_reg_i_E, pc_src_i_E, halt_i_E, wwd_i_E, new_inst_i_E, reg_write_i_E;
 	wire pc_write_cond_o_E, pc_write_o_E, i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E;
 	wire mem_write_o_E, ir_write_o_E, pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E;
 
 	// mem/wb control
-	wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
+	// wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
 	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M;
 	
 	//assign for MEM control
@@ -199,12 +204,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E);
 
+	reg flagRegister;
 
 	// Initalize
 	initial begin
 		PC = 35;
 		read_m1_reg = 1'b0;
-		num_inst <= 1;
+		num_inst = 1;
+		flagRegister = 1'b0;
 	end
 
 	integer count = 0; // temporary
@@ -213,13 +220,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		if(!reset_n) begin
 			PC <= 35;
 			read_m1_reg <= 1'b0;
+			flagRegister <= 1'b0;
 		end
 
 		else begin
 			if(count != 0) begin
 				if(pc_src ==0) begin
 					PC <= (PC + 1);
-					num_inst <= (num_inst + 1);
+					//num_inst <= (num_inst + 1);//
 				end
 				else	
 					PC <= inputImm_IDEX;//temporal for first jump
@@ -229,8 +237,18 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			count = count + 1;
 		end
 
+		if(flagRegister == 1'b1) begin
+			flagRegister <= 1'b0;
+			num_inst <= (num_inst + 1);
+		end
+
+		if(new_inst_o_M == 1'b1) begin
+			//num_inst <= (num_inst + 1);
+			flagRegister <= 1'b1;
+		end
+
 		if(wwd_o_M == 1'b1) begin
-			output_port <= read_out1;
+			output_port <= outputWWD_MEM;
 		end
 
 		
