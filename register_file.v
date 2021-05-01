@@ -26,7 +26,7 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 	always@(posedge clk)begin
 		read_out1 <= reg_file[read1];
 		read_out2 <= reg_file[read2];
-		//$display("reg %d %d %d %d", reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
+		//$strobe("reg %d %d %d %d", reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
 	end
 
 	always@(posedge clk) begin
@@ -54,15 +54,12 @@ module IFID (clk, inputIR, inputPC, outputIR, outputPC);
 	
 endmodule
 
-module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB, inputWWD, outputWWD);
+module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB);
 	input clk;
 	input [`WORD_SIZE - 1 : 0] inputPC, inputData1, inputData2, inputImm, inputInstr;
 	input [1 : 0] inputWB;
 	output reg [`WORD_SIZE - 1 : 0] outputPC, outputData1, outputData2, outputImm, outputInstr;
 	output reg [1 : 0] outputWB;
-
-	input [`WORD_SIZE - 1 : 0] inputWWD;
-	output reg [`WORD_SIZE - 1 : 0] outputWWD;
 	
 	initial begin 
 		outputPC = 0; 
@@ -80,7 +77,6 @@ module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB
 		outputImm <= inputImm;  
 		outputInstr <= inputInstr;  
 		outputWB <= inputWB;
-		outputWWD <= inputWWD;
 	end
 
 endmodule

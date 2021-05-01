@@ -57,12 +57,15 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//wire for wwd
 	wire [15:0] outputWWD_ID, outputWWD_EX, outputWWD_MEM;
+
+	// wire for EX
+	wire [15:0] ALU_a, ALU_b_temp, ALU_b;
 	
 	// pipeline register_modules
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID);
-	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX,inputData1_IDEX,outputWWD_ID);
+	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
-	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM,outputWWD_ID, outputWWD_EX );
+	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
 	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM);
 
 	//wire for control unit
@@ -172,7 +175,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign read_m2 = mem_read_o_E;
 
 	// datapath EX
-	wire [15:0] ALU_a, ALU_b_temp, ALU_b;
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_b_temp);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
@@ -180,7 +182,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//control modules
 	control_unit control_unit_module(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUsrc);
 	hazard_detect hazard_detection_module(IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall);
-	forwarding_unit forwarding_module(clk, forward_A, forward_B, rs1, rs2, WB_EXMEM, WB_MEMWB, rd_EXMEM, rd_MEMWB);
+	forwarding_unit forwarding_module(clk, forward_A, forward_B, rs1, rs2, reg_write_o_E, reg_write_o_M, outputWB_EXMEM, outputWB_MEMWB);
 	alu_control_unit alu_control_module(func_code, opcode, 2'b0, clk, funcCode, branchType);
 	//ALU module
 	alu alu_module(ALU_a, ALU_b, funcCode, branchType, inputALUOUT_EXMEM, overflow_flag, bcond);
@@ -225,7 +227,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 		else begin
 			if(count != 0) begin
-				if(pc_src ==0) begin
+				if(pc_src == 0) begin
 					PC <= (PC + 1);
 					//num_inst <= (num_inst + 1);//
 				end
