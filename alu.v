@@ -3,7 +3,7 @@
 `define NumBits 16
 
 module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
-   input [`NumBits-1:0] A; //input data A
+   input [`NumBits-1:0] A; //input data A.
    input [`NumBits-1:0] B; //input data B
    input [2:0] func_code; //function code for the operation
    input [1:0] branch_type; //branch type for bne, beq, bgz, blz
