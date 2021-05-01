@@ -58,6 +58,7 @@ end
 			4'b1000: C  = B << 8; //LHI
 			4'b1001: C = A; // let value just flow, no operations
 			4'b1010: C = B; // let value B flow
+			default: C = 16'b0;
 		endcase
 
 		case(branch_type)

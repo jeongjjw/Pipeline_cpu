@@ -102,9 +102,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//assign read1 = inputIR_IFID[11 : 10];
 	//assign read2 = inputIR_IFID[9 : 8];
 	//assign inputWB_IDEX = inputIR_IFID[7 : 6];
-	assign opcode = data1[15:12];
-	assign func_code = data1[5:0];
-
+	
 	// assign for control
 	assign read_m1 = read_m1_reg;
 	assign address1 = PC;
@@ -116,12 +114,15 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign inputData2_IDEX = read_out2;
 	//inputImm_IDEX already assigned from IMMmodule
 	assign inputInstr_IDEX = outputIR_IFID;
-	assign inputWB_IDEX = outputIR_IFID[7:6];//write can happen to rd or rt, we need control paths too
+	//assign inputWB_IDEX = outputIR_IFID[7:6];//write can happen to rd or rt, we need control paths too
 
 	wire[1:0] rt, rs, rd, destination_reg_input_t;
 	assign rs = inputIR_IFID[11 : 10] ;
 	assign rt = inputIR_IFID[9 : 8];
 	assign rd = inputIR_IFID[7 : 6];
+
+	assign opcode = inputIR_IFID[15:12];
+	assign func_code = inputIR_IFID[5:0];
 
 	assign read1 = rs;
 	assign read2 = rt;
@@ -144,21 +145,32 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
 	
 	//WB state
-	mux2_1 mux_LWD_or_aluoperation(mem_to_reg, outputALUOUT_EXMEM, data2, write_data);//directly connect wire
+	mux2_1 mux_LWD_or_aluoperation(mem_to_reg_o_M, outputALUOUT_EXMEM, data2, write_data);//directly connect wire
 
+	// control reg wires
+	// ID / EX control
+	wire pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
+	wire pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o, pc_src_o, pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 	
-	/*
-MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB);
-	*/
+	//EX/ MEM control
+	wire pc_write_cond_i_E, pc_write_i_E, i_or_d_i_E, mem_read_i_E, mem_to_reg_i_E;
+	wire mem_write_i_E, ir_write_i_E, pc_to_reg_i_E, pc_src_i_E, halt_i_E, wwd_i_E, new_inst_i_E, reg_write_i_E;
+	wire pc_write_cond_o_E, pc_write_o_E, i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E;
+	wire mem_write_o_E, ir_write_o_E, pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E;
+
+	// mem/wb control
+	wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
+	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M;
+	
 	//assign for MEM control
-	assign write_m2 = mem_write;
-	assign read_m2 = mem_read;
+	assign write_m2 = mem_write_o_E;
+	assign read_m2 = mem_read_o_E;
 
 	// datapath EX
 	wire [15:0] ALU_a, ALU_b_temp, ALU_b;
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_b_temp);
-	mux2_1 scrB(ALUsrc, ALU_b_temp, outputImm_IDEX ,ALU_b);
+	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
 	
 	//control modules
 	control_unit control_unit_module(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUsrc);
@@ -169,29 +181,46 @@ MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outpu
 	alu alu_module(ALU_a, ALU_b, funcCode, branchType, inputALUOUT_EXMEM, overflow_flag, bcond);
 
 	//Register file
-	register_file register_module(read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data, reg_write, clk, reset_n);
+	register_file register_module(read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data, reg_write_o_M, clk, reset_n);
 
-	//ImmGen Module
+	//ImmGen Modul
 	ImmGen immgen_module(inputIR_IFID, inputImm_IDEX);	 
+
+	//control reg modules
+	IDEX_Control IDEX_Control_module(clk, pc_write_cond, pc_write, mem_read, mem_to_reg, mem_write, ir_write, pc_src, pc_to_reg, halt,
+		wwd, new_inst, reg_write, alu_op, ALUsrc, 
+		pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o, pc_src_o, pc_to_reg_o, halt_o,
+		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o);
+	
+	EXMEM_Control EXMEM_Control_Module(clk, pc_write_cond_o, pc_write_o, i_or_d_o, mem_read_o, mem_to_reg_o,
+			mem_write_o, ir_write_o, pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o,
+			pc_write_cond_o_E, pc_write_o_E, i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E,
+			mem_write_o_E, ir_write_o_E, pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E);
+
+	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E);
+
 
 	// Initalize
 	initial begin
-		PC = 0;
+		PC = 35;
 		read_m1_reg = 1'b0;
+		num_inst <= 1;
 	end
 
-	integer count = 0;
+	integer count = 0; // temporary
 	
 	always @(posedge clk) begin
 		if(!reset_n) begin
-			PC <= 0;
+			PC <= 35;
 			read_m1_reg <= 1'b0;
 		end
 
 		else begin
 			if(count != 0) begin
-				if(pc_src ==0)
+				if(pc_src ==0) begin
 					PC <= (PC + 1);
+					num_inst <= (num_inst + 1);
+				end
 				else	
 					PC <= inputImm_IDEX;//temporal for first jump
 			end
@@ -200,7 +229,7 @@ MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outpu
 			count = count + 1;
 		end
 
-		if(wwd == 1'b1) begin
+		if(wwd_o_M == 1'b1) begin
 			output_port <= read_out1;
 		end
 

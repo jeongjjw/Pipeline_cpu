@@ -177,16 +177,17 @@ module EXMEM_Control(clk, pc_write_cond_i, pc_write_i, i_or_d_i, mem_read_i, mem
 	end
 endmodule
 
-module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i);
+module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i, mem_to_reg_o, mem_to_reg_i);
 	input clk;
-	input reg_write_i, new_inst_i, wwd_i, halt_i;
-	output reg reg_write_o, new_inst_o, wwd_o, halt_o;
+	input reg_write_i, new_inst_i, wwd_i, halt_i, mem_to_reg_i;
+	output reg reg_write_o, new_inst_o, wwd_o, halt_o, mem_to_reg_o;
 
 	always@(negedge clk) begin
 		reg_write_o <= reg_write_i;
 		halt_o <= halt_i;
 		wwd_o <= wwd_i;
 		new_inst_o <= new_inst_i;
+		mem_to_reg_o <= mem_to_reg_i;
 	end
 	
 endmodule
