@@ -170,6 +170,8 @@ module alu_control_unit(func_code, opcode, ALUOp, clk, funcCode, branchType);
 						funcCode[2:0] = `FUNC_SHL;
 					`INST_FUNC_SHR:	
 						funcCode[2:0] = `FUNC_SHR;
+					`INST_FUNC_WWD:
+						funcCode = 4'b1001;
 				endcase 
 			end	
 			`ADI_OP: begin
@@ -222,6 +224,8 @@ module forwarding_unit(clk, forward_A, forward_B, rs1, rs2, WB_EXMEM, WB_MEMWB, 
 		forward_B = 0;
 	end
 	always@(posedge clk) begin
+		//forward_A = 0;
+		//forward_B = 0;
 		if((rs1== rd_EXMEM) && (WB_EXMEM == 1'b1)) begin//rs1!=0 condition not used for TSC?
 			forward_A <= 2;
 		end

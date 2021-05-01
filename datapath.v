@@ -103,7 +103,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [`WORD_SIZE-1:0] read_out1;
 	wire [`WORD_SIZE-1:0] read_out2;
 
-
+	//forwarding Register
+	reg [`WORD_SIZE - 1 : 0] forwarding_ALUout;
 
 	// assign for IF data
 	assign inputIR_IFID = data1;
@@ -175,8 +176,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign read_m2 = mem_read_o_E;
 
 	// datapath EX
-	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_a);
-	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, outputALUOUT_EXMEM, 16'b0, ALU_b_temp);
+	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
+	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, forwarding_ALUout, 16'b0, ALU_b_temp);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
 	
 	//control modules
@@ -214,6 +215,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		read_m1_reg = 1'b0;
 		num_inst = 1;
 		flagRegister = 1'b0;
+		forwarding_ALUout = 16'b0;
 	end
 
 	integer count = 0; // temporary
@@ -238,6 +240,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			address1_reg <= PC;
 			count = count + 1;
 		end
+		
+		forwarding_ALUout <= outputALUOUT_EXMEM;
 
 		if(flagRegister == 1'b1) begin
 			flagRegister <= 1'b0;

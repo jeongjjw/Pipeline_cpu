@@ -8,6 +8,7 @@ module ImmGen(in, out);
 
     always @(*) begin
         opcode = in[15 : 12];
+
         if(opcode == `LHI_OP) begin
             out = {8'b0, in[7 : 0]};
         end
@@ -31,5 +32,9 @@ module ImmGen(in, out);
         else if((opcode == `BNE_OP) || (opcode == `BGZ_OP) || (opcode == `BLZ_OP) || (opcode == `BEQ_OP)) begin
 			out = {{8{in[7]}}, in[7 : 0]} + 1;
 		end
+
+        else begin
+            out = 16'b0;
+        end
     end
 endmodule
