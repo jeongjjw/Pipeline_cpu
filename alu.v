@@ -5,7 +5,7 @@
 module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
    input [`NumBits-1:0] A; //input data A.
    input [`NumBits-1:0] B; //input data B.
-   input [2:0] func_code; //function code for the operation
+   input [3:0] func_code; //function code for the operation
    input [1:0] branch_type; //branch type for bne, beq, bgz, blz
    output reg [`NumBits-1:0] C; //output data C
    output reg overflow_flag; 
@@ -21,6 +21,7 @@ end
 	always@(*) begin
 		//bcond =0;
 		overflow_flag = 0;
+		/*
 		case(func_code)
 			`FUNC_ADD: begin
 				C  = $signed(A) + $signed(B);
@@ -36,9 +37,27 @@ end
 			`FUNC_TCP: C  = ~$signed(A) + 1;
 			`FUNC_SHL: C  = A << 1; //SHL
 			`FUNC_SHR: C = A >> 1; //SHR
-		    // : C  = B << 8; //LHI
-			//4'b1001: C = A; // let value just flow, no operations
-			//4'b1010: C = B; // let value B flow
+		endcase
+		*/.
+		
+		case(func_code)
+			4'b0000: begin
+				C  = $signed(A) + $signed(B);
+				overflow_flag = (A[15]==B[15]) && (A[15]!=C[15]);
+			end
+			4'b0001: begin
+				C  = $signed(A) - $signed(B);
+				overflow_flag = (A[15]!=B[15]) && (A[15]!=C[15]);
+			end
+			4'b0010: C  = A & B;
+			4'b0011: C  = A | B;
+			4'b0100: C  = ~A; //NOT
+			4'b0101: C  = ~$signed(A) + 1;
+			4'b0110: C  = A << 1; //SHL
+			4'b0111: C = A >> 1; //SHR
+			4'b1000: C  = B << 8; //LHI
+			4'b1001: C = A; // let value just flow, no operations
+			4'b1010: C = B; // let value B flow
 		endcase
 
 		case(branch_type)

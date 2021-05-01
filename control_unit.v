@@ -144,63 +144,68 @@ module alu_control_unit(func_code, opcode, ALUOp, clk, funcCode, branchType);
   	input [3:0] opcode;//size can change
   	input [5:0] func_code;//size can change
 
-  	output reg [2:0] funcCode;
+  	output reg [3:0] funcCode;
   	output reg [1:0] branchType;
 
 	always@(*) begin
 		case(opcode)
 			`ALU_OP: begin 
-				branchType <= 2'b0;
+				branchType = 2'b0;
+				funcCode[3] = 0;
 				case(func_code)
 					`INST_FUNC_ADD:
-						funcCode <= `FUNC_ADD;
+						funcCode[2:0] = `FUNC_ADD;
 					`INST_FUNC_SUB:
-						funcCode <= `FUNC_SUB;
+						funcCode[2:0] = `FUNC_SUB;
 					`INST_FUNC_AND:
-						funcCode <= `FUNC_AND;
+						funcCode[2:0] = `FUNC_AND;
 					`INST_FUNC_ORR:
-						funcCode <= `FUNC_ORR;
+						funcCode[2:0] = `FUNC_ORR;
 					`INST_FUNC_NOT:
-						funcCode <= `FUNC_NOT;
+						funcCode[2:0] = `FUNC_NOT;
 					`INST_FUNC_TCP:
-						funcCode <= `FUNC_TCP;
+						funcCode[2:0] = `FUNC_TCP;
 					`INST_FUNC_SHL:
-						funcCode <= `FUNC_SHL;
+						funcCode[2:0] = `FUNC_SHL;
 					`INST_FUNC_SHR:	
-						funcCode <= `FUNC_SHR;
+						funcCode[2:0] = `FUNC_SHR;
 				endcase 
 			end	
 			`ADI_OP: begin
-				branchType <= 2'b0;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b0;
+				funcCode[2:0] = `FUNC_ADD;
 			end
 			`ORI_OP: begin
-				branchType <= 2'b0;
-				funcCode <= `FUNC_ORR;
+				branchType = 2'b0;
+				funcCode[2:0] = `FUNC_ORR;
 			end
-			`LHI_OP, `LWD_OP, `SWD_OP: begin
-				branchType <= 2'b0;
-				funcCode <= `FUNC_ADD;
+			`LHI_OP: begin
+				branchType = 2'b0;
+				funcCode = 4'b1000;
+			end 
+			`LWD_OP, `SWD_OP: begin
+				branchType = 2'b0;
+				funcCode = 4'b1010;
 			end
 			`BNE_OP: begin
-				branchType <= 2'b00;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b00;
+				funcCode = `FUNC_ADD;
 			end
 			`BEQ_OP: begin
-				branchType <= 2'b01;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b01;
+				funcCode = `FUNC_ADD;
 			end
 			`BGZ_OP: begin
-				branchType <= 2'b10;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b10;
+				funcCode = `FUNC_ADD;
 			end
 			`BLZ_OP: begin
-				branchType <= 2'b11;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b11;
+				funcCode = `FUNC_ADD;
 			end
 			`JMP_OP, `JAL_OP, `JPR_OP, `JRL_OP: begin
-				branchType <= 2'b0;
-				funcCode <= `FUNC_ADD;
+				branchType = 2'b0;
+				funcCode = `FUNC_ADD;
 			end
 		endcase
 	end

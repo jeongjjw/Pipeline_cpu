@@ -81,7 +81,7 @@ module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB
 
 endmodule
 
-module EXMEM(clk, inputPC, inputALUOUT, inputB, outputB, outputALUOUT, outputPC, inputWB, outputWB);
+module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, outputPC, outputWB);
 	input clk;
 	input [15:0] inputPC, inputALUOUT, inputB; 
 	input [1 : 0] inputWB;

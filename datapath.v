@@ -45,6 +45,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [15:0] outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM;
 	wire [1 : 0] outputWB_EXMEM;
 
+
 	//wire into MEMWB
 	wire [`WORD_SIZE - 1 : 0] inputReadData_MEMWB, inputALUResult_MEMWB;
 	wire [1 : 0] inputWB_MEMWB;
@@ -57,7 +58,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// pipeline register_modules
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID);
 	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
-	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
+	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
+	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM);
 	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB);
 
 	//wire for control unit
@@ -82,9 +84,11 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//wire [1:0] ALUOp; already stated from control unit
   	//input [3:0] opcode;//size can change
   	//input [5:0] func_code;//size can change
-	wire [2:0] funcCode;
+	wire [3:0] funcCode;
   	wire [1:0] branchType;
-
+	wire bcond;
+	wire overflow_flag;
+	
 	//wire for regfile
 	wire [1:0] read1;
 	wire [1:0] read2;
@@ -95,11 +99,11 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	// assign for IF data
 	assign inputIR_IFID = data1;
-	assign read1 = inputIR_IFID[11 : 10];
-	assign read2 = inputIR_IFID[9 : 8];
-	assign inputWB_IDEX = inputIR_IFID[7 : 6];
+	//assign read1 = inputIR_IFID[11 : 10];
+	//assign read2 = inputIR_IFID[9 : 8];
+	//assign inputWB_IDEX = inputIR_IFID[7 : 6];
 	assign opcode = data1[15:12];
-	assign fuccode = data1[5:0];
+	assign func_code = data1[5:0];
 
 	// assign for control
 	assign read_m1 = read_m1_reg;
@@ -108,11 +112,29 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//assign for ID data
 	assign inputPC_IDEX = outputPC_IFID;
-	assign inputData1_IDEX = data1;
-	assign inputData2_IDEX = data2;
+	assign inputData1_IDEX = read_out1;
+	assign inputData2_IDEX = read_out2;
 	//inputImm_IDEX already assigned from IMMmodule
 	assign inputInstr_IDEX = outputIR_IFID;
 	assign inputWB_IDEX = outputIR_IFID[7:6];//write can happen to rd or rt, we need control paths too
+
+	wire[1:0] rt, rs, rd, destination_reg_input_t;
+	assign rs = inputIR_IFID[11 : 10] ;
+	assign rt = inputIR_IFID[9 : 8];
+	assign rd = inputIR_IFID[7 : 6];
+
+	assign read1 = rs;
+	assign read2 = rt;
+	
+	assign destination_reg_input_t = (opcode <= 4'd8 && opcode >= 4'd0) ? rt : rd;
+	assign inputWB_IDEX = (opcode == `JAL_OP || (opcode == `JRL_OP && func_code == `INST_FUNC_JRL)) ? 4'd2 : destination_reg_input_t;
+	//assign 
+
+	//assign for EX data
+	assign inputPC_EXMEM = outputPC_IDEX;
+	assign inputB_EXMEM = outputData2_IDEX;
+	assign inputWB_EXMEM = outputWB_IDEX;
+
 
 	//assign for MEM data 
 	assign inputWB_MEMWB = outputWB_IDEX;
@@ -120,8 +142,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign data2 = write_m2 ? outputB_EXMEM : 16'bz;
 	assign inputALUResult_MEMWB = outputALUOUT_EXMEM;
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
-	mux2_1 mux_LWD_or_aluoperation(mem_to_reg, data2, outputALUOUT_EXMEM, write_data);
 	
+	//WB state
+	mux2_1 mux_LWD_or_aluoperation(mem_to_reg, outputALUOUT_EXMEM, data2, write_data);//directly connect wire
+
+	
+	/*
+MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB);
+	*/
 	//assign for MEM control
 	assign write_m2 = mem_write;
 	assign read_m2 = mem_read;
@@ -138,7 +166,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	forwarding_unit forwarding_module(clk, forward_A, forward_B, rs1, rs2, WB_EXMEM, WB_MEMWB, rd_EXMEM, rd_MEMWB);
 	alu_control_unit alu_control_module(func_code, opcode, 2'b0, clk, funcCode, branchType);
 	//ALU module
-	alu alu_module(ALU_a, ALU_b, func_code, branch_type, C, overflow_flag, bcond);
+	alu alu_module(ALU_a, ALU_b, funcCode, branchType, inputALUOUT_EXMEM, overflow_flag, bcond);
 
 	//Register file
 	register_file register_module(read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data, reg_write, clk, reset_n);
@@ -149,7 +177,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// Initalize
 	initial begin
 		PC = 0;
-		read_m1_reg = 1'b1;
+		read_m1_reg = 1'b0;
 	end
 
 	integer count = 0;
@@ -157,7 +185,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	always @(posedge clk) begin
 		if(!reset_n) begin
 			PC <= 0;
-			read_m1_reg <= 1'b1;
+			read_m1_reg <= 1'b0;
 		end
 
 		else begin
