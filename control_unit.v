@@ -149,7 +149,9 @@ module alu_control_unit(func_code, opcode, ALUOp, clk, funcCode, branchType);
   	output reg [1:0] branchType;
 
 	always@(*) begin
+		funcCode = 0;
 		case(opcode)
+		
 			`ALU_OP: begin 
 				branchType = 2'b0;
 				funcCode[3] = 0;
