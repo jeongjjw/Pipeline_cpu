@@ -137,7 +137,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign read2 = rt;
 	
 	assign destination_reg_input_t = (opcode <= 4'd8 && opcode >= 4'd0) ? rt : rd;
-	assign inputWB_IDEX = (opcode == `JAL_OP || (opcode == `JRL_OP && func_code == `INST_FUNC_JRL)) ? 4'd2 : destination_reg_input_t;
+	assign inputWB_IDEX = (wwd==1) ? outputWB_IDEX:((opcode == `JAL_OP || (opcode == `JRL_OP && func_code == `INST_FUNC_JRL)) ? 4'd2 : destination_reg_input_t);
 	//assign 
 
 	//assign for EX data
