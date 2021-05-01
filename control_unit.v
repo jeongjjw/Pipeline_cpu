@@ -49,13 +49,14 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, pc_write, /
 			mem_read <= 1'b0;
 			if(func_code == `INST_FUNC_WWD) begin
 				wwd <= 1'b1;
+				reg_write <= 1'b1;
 			end
 			else begin
 				wwd <= 1'b0;
+				reg_write <= 1'b0;
 			end
 			// WB
 			mem_to_reg <= 1'b0;
-			reg_write <= 1'b1;
 			new_inst <= 1'b1;
 		end
 		`ADI_OP, `ORI_OP, `LHI_OP: begin

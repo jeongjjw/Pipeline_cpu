@@ -38,7 +38,7 @@ end
 			`FUNC_SHL: C  = A << 1; //SHL
 			`FUNC_SHR: C = A >> 1; //SHR
 		endcase
-		*/.
+		*/
 		
 		case(func_code)
 			4'b0000: begin
