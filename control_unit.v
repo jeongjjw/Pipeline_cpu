@@ -228,10 +228,10 @@ module forwarding_unit(clk, forward_A, forward_B, rs1, rs2, WB_EXMEM, WB_MEMWB, 
 	always@(posedge clk) begin
 		//forward_A = 0;
 		//forward_B = 0;
-		if((rs1== rd_EXMEM) && (WB_EXMEM == 1'b1)) begin//rs1!=0 condition not used for TSC?
+		if((rs1== rd_EXMEM) && (WB_EXMEM == 1'b1)) begin//dist ==1 rs1!=0 condition not used for TSC?
 			forward_A <= 2;
 		end
-		else if ((rs1== rd_MEMWB) && (WB_MEMWB == 1'b1)) begin
+		else if ((rs1== rd_MEMWB) && (WB_MEMWB == 1'b1)) begin//dist ==2
 			forward_A <= 1;
 		end	
 		else
