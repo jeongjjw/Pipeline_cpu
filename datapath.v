@@ -256,12 +256,16 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= inputImm_IDEX;//temporal for first jump
 			end
 			read_m1_reg <= 1'b1;
-			read_m2_reg_temp <= mem_read_o_E;
 			address1_reg <= PC;
 			count <= count + 1;
 		end
 		
-		if(read_m2_reg_temp ==1 || mem_read_o_E == 1'b1) begin
+		if(mem_read_o_E == 1'b1) begin
+			read_m2_reg <= 1;
+			read_m2_reg_temp <= 1;
+		end
+		else if(read_m2_reg_temp ==1) begin
+			read_m2_reg_temp <= 0;
 			read_m2_reg <= 1;
 		end
 		else begin
