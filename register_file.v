@@ -15,6 +15,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 	//TODO: implement register file
 	reg [15:0] reg_file [0:3];
 
+	integer i;
+
 	initial begin
 		reg_file[0] = 0;
 		reg_file[1] = 0;
@@ -22,6 +24,7 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 		reg_file[3] = 0;
 		read_out1 = 0;
 		read_out2 = 0;
+		i = 0;
 	end
 
 	always@(posedge clk)begin
@@ -41,7 +44,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 			read_out1 <= reg_file[read1];
 			read_out2 <= reg_file[read2];
 		end
-		// $strobe("reg %d %d %d %d", reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
+		i <= i + 1;
+		$strobe("%h : reg %d %d %d %d", i, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
 	end
 
 	always@(posedge clk) begin
