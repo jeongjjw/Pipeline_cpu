@@ -26,7 +26,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//TODO: implement datapath of pipelined CPU
 
 	// register for output
-	reg read_m1_reg;
+	reg read_m1_reg, read_m2_reg;
 	reg [15:0] address1_reg;
 
 	// register wires 
@@ -114,6 +114,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	// assign for control
 	assign read_m1 = read_m1_reg;
+	assign read_m2 = read_m2_reg;
 	assign address1 = PC;
 //address1_reg;
 
@@ -173,7 +174,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	//assign for MEM control
 	assign write_m2 = mem_write_o_E;
-	assign read_m2 = mem_read_o_E;
+	//assign read_m2 = mem_read_o_E;
 
 	// datapath EX
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
@@ -231,6 +232,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		num_inst = 1;
 		flagRegister = 1'b0;
 		forwarding_ALUout = 16'b0;
+		read_m2_reg = 1'b0;
 	end
 
 	integer count = 0; // temporary
@@ -240,6 +242,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			PC <= 35;
 			read_m1_reg <= 1'b0;
 			flagRegister <= 1'b0;
+			read_m2_reg <= 1'b0;
 		end
 
 		else begin
@@ -252,6 +255,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= inputImm_IDEX;//temporal for first jump
 			end
 			read_m1_reg <= 1'b1;
+			read_m2_reg <= mem_read_o_E;
 			address1_reg <= PC;
 			count = count + 1;
 		end
@@ -272,7 +276,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		if(wwd_o_M == 1'b1) begin
 			output_port <= outputWWD_MEM;
 		end
-
+		
 		
 	end
 
