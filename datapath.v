@@ -26,7 +26,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//TODO: implement datapath of pipelined CPU
 
 	// register for output
-	reg read_m1_reg, read_m2_reg;
+	reg read_m1_reg, read_m2_reg, read_m2_reg_temp;
 	reg [15:0] address1_reg;
 
 	// register wires 
@@ -232,7 +232,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		num_inst = 1;
 		flagRegister = 1'b0;
 		forwarding_ALUout = 16'b0;
-		read_m2_reg = 1'b1;
+		read_m2_reg = 1'b0;
+		read_m2_reg_temp = 1'b0;
 	end
 
 	integer count = 0; // temporary
@@ -242,7 +243,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			PC <= 35;
 			read_m1_reg <= 1'b0;
 			flagRegister <= 1'b0;
-			read_m2_reg <= 1'b1;
+			read_m2_reg <= 1'b0;
 		end
 
 		else begin
@@ -255,10 +256,18 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= inputImm_IDEX;//temporal for first jump
 			end
 			read_m1_reg <= 1'b1;
-			//read_m2_reg <= mem_read_o_E;
+			read_m2_reg_temp <= mem_read_o_E;
 			address1_reg <= PC;
-			count = count + 1;
+			count <= count + 1;
 		end
+		
+		if(read_m2_reg_temp ==1 || mem_read_o_E == 1'b1) begin
+			read_m2_reg <= 1;
+		end
+		else begin
+			read_m2_reg <= 0;
+		end
+
 		if(is_stall  == 0) begin
 			forwarding_ALUout <= outputALUOUT_EXMEM;
 		end
