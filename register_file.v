@@ -145,21 +145,21 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 endmodule
 
 
-module IDEX_Control (clk, pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i,
+module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i,
 		wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i, 
-		pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o, pc_src_o, pc_to_reg_o, halt_o,
+		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
 		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o);
 	input clk;
-	input pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
-	output reg pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o, pc_src_o, pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
+	input pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
+	output reg pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 
 	always @(negedge clk) begin
 		pc_write_cond_o <= pc_write_cond_i;
-		pc_write_o <= pc_write_o; 
+		// pc_write_o <= pc_write_o; 
 		mem_read_o <= mem_read_i;
 		mem_to_reg_o <= mem_to_reg_i; 
 		mem_write_o <= mem_write_i; 
-		ir_write_o <= ir_write_i; 
+		// ir_write_o <= ir_write_i; 
 		pc_src_o <= pc_src_i; 
 		pc_to_reg_o <= pc_to_reg_i; 
 		halt_o <= halt_i; 
@@ -172,25 +172,25 @@ module IDEX_Control (clk, pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i,
 
 endmodule
 
-module EXMEM_Control(clk, pc_write_cond_i, pc_write_i, i_or_d_i, mem_read_i, mem_to_reg_i,
-			mem_write_i, ir_write_i, pc_to_reg_i, pc_src_i, halt_i, wwd_i, new_inst_i, reg_write_i,
-			pc_write_cond_o, pc_write_o, i_or_d_o, mem_read_o, mem_to_reg_o,
-			mem_write_o, ir_write_o, pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o);
+module EXMEM_Control(clk, pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i, mem_to_reg_i,
+			mem_write_i, /*ir_write_i,*/ pc_to_reg_i, pc_src_i, halt_i, wwd_i, new_inst_i, reg_write_i,
+			pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o,
+			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o);
 	input clk;
-	input pc_write_cond_i, pc_write_i, i_or_d_i, mem_read_i, mem_to_reg_i;
-	input mem_write_i, ir_write_i, pc_to_reg_i, pc_src_i, halt_i, wwd_i, new_inst_i, reg_write_i;
+	input pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i, mem_to_reg_i;
+	input mem_write_i, /*ir_write_i,*/ pc_to_reg_i, pc_src_i, halt_i, wwd_i, new_inst_i, reg_write_i;
 
-	output reg pc_write_cond_o, pc_write_o, i_or_d_o, mem_read_o, mem_to_reg_o;
-	output reg mem_write_o, ir_write_o, pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o;
+	output reg pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o;
+	output reg mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o;
 	
 	always@(negedge clk) begin
 		pc_write_cond_o <= pc_write_cond_i;
-		pc_write_o <= pc_write_i;
+		// pc_write_o <= pc_write_i;
 		i_or_d_o <= i_or_d_i;
 		mem_read_o <= mem_read_i;
 		mem_to_reg_o <= mem_to_reg_i;
 		mem_write_o <= mem_write_i;
-		ir_write_o <= ir_write_i;
+		// ir_write_o <= ir_write_i;
 		pc_to_reg_o <= pc_to_reg_i;
 		pc_src_o <= pc_src_i;
 		halt_o <= halt_i;

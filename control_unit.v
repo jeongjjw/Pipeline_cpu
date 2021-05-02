@@ -1,6 +1,6 @@
 `include "opcodes.v" 
 
-module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, pc_write, /*i_or_d,*/ mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUSrc);
+module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write, i_or_d,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUSrc);
 
 	input [3:0] opcode;
 	input [5:0] func_code;
@@ -9,7 +9,7 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, pc_write, /
 	input reset_n;
 	
 
-	output reg pc_write_cond, pc_write, mem_read, mem_to_reg, mem_write, ir_write, pc_src;
+	output reg pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_src;
 	//unused regs
 	//output reg i_or_d;
 	//output reg alu_src_A, alu_src_B;
