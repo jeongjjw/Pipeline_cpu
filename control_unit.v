@@ -21,11 +21,11 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 
 	initial begin
 		pc_write_cond = 0;
-		pc_write = 0;
+		//pc_write = 0;
 		mem_read = 1;//for first instruction read
 		mem_to_reg = 0;
 		mem_write = 0;
-		ir_write = 0;
+		//ir_write = 0;
 		pc_src = 0;
 		pc_to_reg= 0;
 		halt = 0;

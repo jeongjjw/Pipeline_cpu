@@ -53,8 +53,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
     
 endmodule
 
-module IFID (clk, inputIR, inputPC, outputIR, outputPC);
-	input clk;
+module IFID (clk, inputIR, inputPC, outputIR, outputPC, ir_write);
+	input clk, ir_write;
 	input [15:0] inputIR, inputPC;
 	output reg [15:0] outputIR, outputPC;
 	initial begin
@@ -63,8 +63,10 @@ module IFID (clk, inputIR, inputPC, outputIR, outputPC);
 	end
 	
 	always @(negedge clk) begin
-		outputIR <= inputIR;
-		outputPC <= inputPC;
+		if(ir_write) begin
+			outputIR <= inputIR;
+			outputPC <= inputPC;
+		end
 	end
 	
 endmodule

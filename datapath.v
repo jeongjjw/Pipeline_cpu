@@ -62,7 +62,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [15:0] ALU_a, ALU_b_temp, ALU_b;
 	
 	// pipeline register_modules
-	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID);
+	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write);
 	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
 	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
@@ -182,7 +182,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	//control modules
 	control_unit control_unit_module(opcode, func_code, clk, reset_n, pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUsrc);
-	hazard_detect hazard_detection_module(IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall);
+	hazard_detect hazard_detection_module(clk,outputInstr_IDEX, outputWB_IDEX, mem_read_o, is_stall, pc_write, ir_write);
 	forwarding_unit forwarding_module(clk, forward_A, forward_B, inputInstr_IDEX[11:10], inputInstr_IDEX[9:8], reg_write_o_E, reg_write_o_M, outputWB_EXMEM, outputWB_MEMWB);
 	alu_control_unit alu_control_module(inputInstr_IDEX[5:0], inputInstr_IDEX[15:12], 2'b0, clk, funcCode, branchType);
 	//ALU module
@@ -194,9 +194,24 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//ImmGen Modul
 	ImmGen immgen_module(inputIR_IFID, inputImm_IDEX);	 
 
+	//control mux
+	wire pc_write_cond_t, mem_read_t, mem_to_reg_t, mem_write_t, pc_to_reg_t, pc_src_t, halt_t, wwd_t, new_inst_t, reg_write_t, alu_op_t, ALUsrc_t;
+	assign pc_write_cond_t = (is_stall == 1'b1) ? 1'b0 : pc_write_cond;
+	assign mem_read_t = (is_stall == 1'b1) ? 1'b0 : mem_read;
+	assign mem_to_reg_t = (is_stall == 1'b1) ? 1'b0 : mem_to_reg;
+	assign mem_write_t = (is_stall == 1'b1) ? 1'b0 : mem_write;
+	assign pc_to_reg_t = (is_stall == 1'b1) ? 1'b0 : pc_to_reg;
+	assign pc_src_t = (is_stall == 1'b1) ? 1'b0 : pc_src;
+	assign halt_t = (is_stall == 1'b1) ? 1'b0 : halt;
+	assign wwd_t = (is_stall == 1'b1) ? 1'b0 : wwd;
+	assign new_inst_t = (is_stall == 1'b1) ? 1'b0 : new_inst;
+	assign reg_write_t = (is_stall == 1'b1) ? 1'b0 : reg_write;
+	assign alu_op_t = (is_stall == 1'b1) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1) ? 1'b0 : ALUsrc;
+
 	//control reg modules
-	IDEX_Control IDEX_Control_module(clk, pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_src, pc_to_reg, halt,
-		wwd, new_inst, reg_write, alu_op, ALUsrc, 
+	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
+		wwd_t, new_inst_t, reg_write_t, alu_op_t, ALUsrc_t, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
 		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o);
 	
@@ -228,7 +243,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		end
 
 		else begin
-			if(count != 0) begin
+			if((count != 0) && (pc_write == 1'b1)) begin
 				if(pc_src == 0) begin
 					PC <= (PC + 1);
 					//num_inst <= (num_inst + 1);//
