@@ -26,10 +26,13 @@ module hazard_detect(clk, IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall, pc_write,
 		rs1 <= IFID_IR[11:10];
 		rs2 <= IFID_IR[9:8];
 		if(IDEX_M_mem_read == 1) begin
-			if(IDEX_rd == rs1 || IDEX_rd == rs2)
+			if(IDEX_rd == rs1 || IDEX_rd == rs2) begin
 				is_stall <= 1;
+				pc_write <= 0;
+				ir_write <= 0;
+			end
 		end
-		/*
+ 		/*
 		if(is_stall ==0) begin
 			pc_write = 1;
 			ir_write = 1;
@@ -39,13 +42,13 @@ module hazard_detect(clk, IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall, pc_write,
 
 	always@(posedge clk) begin
 		if(is_stall == 1) begin
-			pc_write <= 0;
-			ir_write <= 0;
+			pc_write <= 1;
+			ir_write <= 1;
 			is_stall <= 0;
 		end
 		else if(is_stall ==0) begin
-			pc_write <= 1;
-			ir_write <= 1;
+			//pc_write <= 1;
+			//ir_write <= 1;
 		end
 	end	
 
