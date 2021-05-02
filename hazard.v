@@ -22,12 +22,12 @@ module hazard_detect(clk, IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall, pc_write,
 		ir_write = 1;
 	end
 
-	always@(*) begin
-		rs1 = IFID_IR[11:10];
-		rs2 = IFID_IR[9:8];
+	always@(posedge clk) begin
+		rs1 <= IFID_IR[11:10];
+		rs2 <= IFID_IR[9:8];
 		if(IDEX_M_mem_read == 1) begin
 			if(IDEX_rd == rs1 || IDEX_rd == rs2)
-				is_stall = 1;
+				is_stall <= 1;
 		end
 		/*
 		if(is_stall ==0) begin

@@ -232,7 +232,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		num_inst = 1;
 		flagRegister = 1'b0;
 		forwarding_ALUout = 16'b0;
-		read_m2_reg = 1'b0;
+		read_m2_reg = 1'b1;
 	end
 
 	integer count = 0; // temporary
@@ -242,7 +242,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			PC <= 35;
 			read_m1_reg <= 1'b0;
 			flagRegister <= 1'b0;
-			read_m2_reg <= 1'b0;
+			read_m2_reg <= 1'b1;
 		end
 
 		else begin
@@ -255,7 +255,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= inputImm_IDEX;//temporal for first jump
 			end
 			read_m1_reg <= 1'b1;
-			read_m2_reg <= mem_read_o_E;
+			//read_m2_reg <= mem_read_o_E;
 			address1_reg <= PC;
 			count = count + 1;
 		end
