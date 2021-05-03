@@ -214,7 +214,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
 		wwd_t, new_inst_t, reg_write_t, alu_op_t, ALUsrc_t, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
-		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o);
+		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall);
 	
 	EXMEM_Control EXMEM_Control_Module(clk, pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o,
 			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o,

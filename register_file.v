@@ -154,26 +154,31 @@ endmodule
 module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i,
 		wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
-		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o);
-	input clk;
+		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall);
+	input clk, is_stall;
 	input pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
 	output reg pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 
 	always @(negedge clk) begin
-		pc_write_cond_o <= pc_write_cond_i;
-		// pc_write_o <= pc_write_o; 
-		mem_read_o <= mem_read_i;
-		mem_to_reg_o <= mem_to_reg_i; 
-		mem_write_o <= mem_write_i; 
-		// ir_write_o <= ir_write_i; 
-		pc_src_o <= pc_src_i; 
-		pc_to_reg_o <= pc_to_reg_i; 
-		halt_o <= halt_i; 
-		wwd_o <= wwd_i; 
-		new_inst_o <= new_inst_i; 
-		reg_write_o <= reg_write_i; 
-		alu_op_o <= alu_op_i; 
-		ALUsrc_o <= ALUsrc_i;
+		if(is_stall == 0) begin
+			pc_write_cond_o <= pc_write_cond_i;
+			// pc_write_o <= pc_write_o; 
+			mem_read_o <= mem_read_i;
+			mem_to_reg_o <= mem_to_reg_i; 
+			mem_write_o <= mem_write_i; 
+			// ir_write_o <= ir_write_i; 
+			pc_src_o <= pc_src_i; 
+			pc_to_reg_o <= pc_to_reg_i; 
+			halt_o <= halt_i; 
+			wwd_o <= wwd_i; 
+			new_inst_o <= new_inst_i; 
+			reg_write_o <= reg_write_i; 
+			alu_op_o <= alu_op_i; 
+			ALUsrc_o <= ALUsrc_i;
+		end
+		else begin
+			new_inst_o <= 0;
+		end
 	end
 
 endmodule
