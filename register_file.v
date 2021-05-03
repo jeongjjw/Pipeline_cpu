@@ -45,7 +45,7 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 			read_out2 <= reg_file[read2];
 		end
 		i <= i + 1;
-		$strobe("%h : reg %d %d %d %d", i, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
+		// $strobe("%h : reg %d %d %d %d", i, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
 	end
 
 	always@(posedge clk) begin

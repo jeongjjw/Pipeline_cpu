@@ -223,31 +223,33 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E);
 
-	reg flagRegister;
-
+	reg flagRegister, count;
+	assign is_halted = halt_o_M;//check this
 	// Initalize
 	initial begin
-		PC = 35;
+		PC = 0;
 		read_m1_reg = 1'b0;
-		num_inst = 1;
+		num_inst = 0;
 		flagRegister = 1'b0;
 		forwarding_ALUout = 16'b0;
 		read_m2_reg = 1'b0;
 		read_m2_reg_temp = 1'b0;
+		count = 1'b0;
 	end
 
-	integer count = 0; // temporary
+	// integer count = 0; // temporary
 	
 	always @(posedge clk) begin
 		if(!reset_n) begin
-			PC <= 35;
+			PC <= 0;
 			read_m1_reg <= 1'b0;
 			flagRegister <= 1'b0;
 			read_m2_reg <= 1'b0;
+			count <= 1'b0;
 		end
 
 		else begin
-			if((count != 0) && (pc_write == 1'b1)) begin
+			if(count != 1'b0 && pc_write == 1'b1) begin
 				if(pc_src == 0) begin
 					PC <= (PC + 1);
 					//num_inst <= (num_inst + 1);//
@@ -257,7 +259,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			end
 			read_m1_reg <= 1'b1;
 			address1_reg <= PC;
-			count <= count + 1;
+			count <= 1'b1;
 		end
 		
 		if(mem_read_o_E == 1'b1) begin
