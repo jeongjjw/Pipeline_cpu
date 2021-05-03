@@ -9,7 +9,8 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 	input reset_n;
 	
 
-	output reg pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_src;
+	output reg pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write /*ir_write,*/;
+	output reg [1:0] pc_src;
 	//unused regs
 	//output reg i_or_d;
 	//output reg alu_src_A, alu_src_B;
@@ -106,6 +107,8 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 			mem_to_reg <= 1'b0;
 			reg_write <= 1'b0;
 			new_inst <= 1'b1;
+			
+			pc_src <= 2;
 		end 
 		`JMP_OP: begin
 			// EX
@@ -120,7 +123,7 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 			new_inst <= 1'b1;
 			
 			//for jump instr, we need to write new pc value
-			pc_src = 1;
+			pc_src <= 1;
 		end
 		`JAL_OP: begin
 			// EX
