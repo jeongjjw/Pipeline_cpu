@@ -183,7 +183,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	//control modules
 	control_unit control_unit_module(opcode, func_code, clk, reset_n, pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUsrc);
-	hazard_detect hazard_detection_module(clk, inputInstr_IDEX, outputWB_EXMEM, mem_read_o, is_stall, pc_write, ir_write);
+	hazard_detect hazard_detection_module(clk, inputInstr_IDEX, outputWB_EXMEM, mem_read_o_E, is_stall, pc_write, ir_write);
 	forwarding_unit forwarding_module(clk, forward_A, forward_B, inputInstr_IDEX[11:10], inputInstr_IDEX[9:8], reg_write_o_E, reg_write_o_M, outputWB_EXMEM, outputWB_MEMWB);
 	alu_control_unit alu_control_module(inputInstr_IDEX[5:0], inputInstr_IDEX[15:12], 2'b0, clk, funcCode, branchType);
 	//ALU module
