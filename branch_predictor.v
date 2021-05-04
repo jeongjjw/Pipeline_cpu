@@ -98,7 +98,8 @@ module checkCondition(instr, read_out1, read_out2, condition);
 endmodule
 
 
-module calc_correct(bcond, Imm, PC, correctPC);
+module calc_correct(clk, bcond, Imm, PC, correctPC);
+	input clk;
 	input bcond;
 	input [15:0] Imm, PC;
 	output reg [15:0] correctPC;
@@ -107,7 +108,7 @@ module calc_correct(bcond, Imm, PC, correctPC);
 		correctPC =0;
 	end
 
-	always@(*) begin
+	always@(posedge clk) begin
 		if(bcond == 1) begin
 			correctPC = PC + Imm;
 		end
