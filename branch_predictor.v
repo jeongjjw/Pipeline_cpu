@@ -120,6 +120,7 @@ endmodule
 
 
 module branch_sig(clk, predictPC, correctPC, branch_signal, instr);
+	input clk;
 	input [`WORD_SIZE - 1 : 0] predictPC;
 	input [`WORD_SIZE - 1 : 0] correctPC;
 	input [15:0] instr;

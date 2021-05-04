@@ -44,103 +44,103 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 		case(opcode)
 		`ALU_OP: begin//ALU, HLT, JPR, JRL, WWD
 			// EX
-			ALUSrc <= 1'b0;
+			ALUSrc = 1'b0;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b0;
 			if(func_code == `INST_FUNC_WWD) begin
-				wwd <= 1'b1;
-				reg_write <= 1'b0;
+				wwd = 1'b1;
+				reg_write = 1'b0;
 			end
 			else if(func_code == `INST_FUNC_HLT ) begin
-				halt <= 1;
-				reg_write <= 1'b0;
+				halt = 1;
+				reg_write = 1'b0;
 			end
 			else begin
-				wwd <= 1'b0;
-				reg_write <= 1'b1;
-				halt <= 0;
+				wwd = 1'b0;
+				reg_write = 1'b1;
+				halt = 0;
 			end		
 			// WB
-			mem_to_reg <= 1'b0;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			new_inst = 1'b1;
 		end
 		`ADI_OP, `ORI_OP, `LHI_OP: begin
 			// EX
-			ALUSrc <= 1'b1;
+			ALUSrc = 1'b1;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b0;
-			wwd <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b0;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b0;
-			reg_write <= 1'b1;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			reg_write = 1'b1;
+			new_inst = 1'b1;
 		end
 		`LWD_OP: begin
 			// EX
-			ALUSrc <= 1'b1;
+			ALUSrc = 1'b1;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b1;
-			wwd <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b1;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b1;
-			reg_write <= 1'b1;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b1;
+			reg_write = 1'b1;
+			new_inst = 1'b1;
 		end
 		`SWD_OP: begin
 			// EX
-			ALUSrc <= 1'b1;
+			ALUSrc = 1'b1;
 			// MEM
-			mem_write <= 1'b1; 
-			mem_read <= 1'b0;
-			wwd <= 1'b0;
+			mem_write= 1'b1; 
+			mem_read = 1'b0;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b0;
-			reg_write <= 1'b0;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			reg_write = 1'b0;
+			new_inst = 1'b1;
 		end
 		`BNE_OP, `BEQ_OP, `BGZ_OP, `BLZ_OP: begin
 			// EX
-			ALUSrc <= 1'b0;
+			ALUSrc = 1'b0;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b0;
-			wwd <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b0;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b0;
-			reg_write <= 1'b0;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			reg_write = 1'b0;
+			new_inst = 1'b1;
 			
-			pc_src <= 2;
+			pc_src = 2;
 		end 
 		`JMP_OP: begin
 			// EX
-			ALUSrc <= 1'b0;
+			ALUSrc = 1'b0;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b0;
-			wwd <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b0;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b0;
-			reg_write <= 1'b0;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			reg_write = 1'b0;
+			new_inst = 1'b1;
 			
 			//for jump instr, we need to write new pc value
-			pc_src <= 1;
+			pc_src = 1;
 		end
 		`JAL_OP: begin
 			// EX
-			ALUSrc <= 1'b0;
+			ALUSrc = 1'b0;
 			// MEM
-			mem_write <= 1'b0; 
-			mem_read <= 1'b0;
-			wwd <= 1'b0;
+			mem_write = 1'b0; 
+			mem_read = 1'b0;
+			wwd = 1'b0;
 			// WB
-			mem_to_reg <= 1'b0;
-			reg_write <= 1'b0;
-			new_inst <= 1'b1;
+			mem_to_reg = 1'b0;
+			reg_write = 1'b0;
+			new_inst = 1'b1;
 		end
 		endcase
 	end
