@@ -118,17 +118,30 @@ module calc_correct(bcond, Imm, PC, correctPC);
 endmodule
 
 
-module branch_sig(predictPC, correctPC, branch_signal);
+module branch_sig(predictPC, correctPC, branch_signal, instr);
 	input [`WORD_SIZE - 1 : 0] predictPC;
 	input [`WORD_SIZE - 1 : 0] correctPC;
+	input [15:0] instr;
 	output reg branch_signal;
 
+	initial begin
+		branch_signal = 0;
+	end
+
+	wire [3:0] opcode;
+	assign opcode = instr[15 : 11];
+
 	always @(*) begin
-		if(predictPC == correctPC) begin
-			branch_signal = 1'b0;
+		if(opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) begin
+			if(predictPC == correctPC) begin
+				branch_signal = 1'b0;
+			end
+			else begin
+				branch_signal = 1'b1;
+			end	
 		end
 		else begin
-			branch_signal = 1'b1;
-		end	
+			branch_signal = 1'b0;
+		end
 	end
 endmodule

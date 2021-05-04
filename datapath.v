@@ -176,6 +176,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
 	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M;
 	
+	wire branch_signal;
+
 	//assign for MEM control
 	assign write_m2 = mem_write_o_E;
 	//assign read_m2 = mem_read_o_E;
@@ -202,18 +204,18 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//control mux
 	wire pc_write_cond_t, mem_read_t, mem_to_reg_t, mem_write_t, pc_to_reg_t, halt_t, wwd_t, new_inst_t, reg_write_t, alu_op_t, ALUsrc_t;
 	wire [1:0] pc_src_t;
-	assign pc_write_cond_t = (is_stall == 1'b1) ? 1'b0 : pc_write_cond;
-	assign mem_read_t = (is_stall == 1'b1) ? 1'b0 : mem_read;
-	assign mem_to_reg_t = (is_stall == 1'b1) ? 1'b0 : mem_to_reg;
-	assign mem_write_t = (is_stall == 1'b1) ? 1'b0 : mem_write;
-	assign pc_to_reg_t = (is_stall == 1'b1) ? 1'b0 : pc_to_reg;
-	assign pc_src_t = (is_stall == 1'b1) ? 1'b0 : pc_src;
-	assign halt_t = (is_stall == 1'b1) ? 1'b0 : halt;
-	assign wwd_t = (is_stall == 1'b1) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1) ? 1'b0 : new_inst;
-	assign reg_write_t = (is_stall == 1'b1) ? 1'b0 : reg_write;
-	assign alu_op_t = (is_stall == 1'b1) ? 1'b0 : alu_op;
-	assign ALUsrc_t = (is_stall == 1'b1) ? 1'b0 : ALUsrc;
+	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_write_cond;
+	assign mem_read_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_read;
+	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_to_reg;
+	assign mem_write_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_write;
+	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_to_reg;
+	assign pc_src_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_src;
+	assign halt_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : halt;
+	assign wwd_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : wwd;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : new_inst;
+	assign reg_write_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : reg_write;
+	assign alu_op_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : ALUsrc;
 
 	//control reg modules
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
@@ -221,6 +223,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
 		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall);
 	
+
 	EXMEM_Control EXMEM_Control_Module(clk, pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o,
 			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o,
 			pc_write_cond_o_E, /*pc_write_o_E,*/ i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E,
@@ -233,12 +236,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	// Branch Predictor
 	wire [`WORD_SIZE - 1:0] nextBranchPC, correctPC;
-	wire condition, branch_signal;
+	wire condition;
 	
 	branch_predictor BP(clk, PC, condition, nextBranchPC);
 	checkCondition checkCondition_module(inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(condition, inputImm_IDEX, outputPC_IFID, correctPC);
-	branch_sig b_sig_module(outputPC_IFID, correctPC, branch_signal);
+	branch_sig b_sig_module(outputPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	
 	// Initalize
 	initial begin
@@ -265,7 +268,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 		else begin
 			if(count != 1'b0 && pc_write == 1'b1) begin
-				if(pc_src == 0) begin
+				if(branch_signal == 1'b1) begin
+					PC <= correctPC;
+				end
+				else if(pc_src == 0) begin
 					PC <= (PC + 1);
 					//num_inst <= (num_inst + 1);//
 				end
