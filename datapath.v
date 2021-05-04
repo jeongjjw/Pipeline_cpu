@@ -233,11 +233,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	// Branch Predictor
 	wire [`WORD_SIZE - 1:0] nextBranchPC, correctPC;
-	wire condition;
+	wire condition, branch_signal;
 	
-	branch_predictor BP(PC, 1'b0, nextBranchPC);
-	checkCondition checkCondition_module(inputIR_ID, read_out1, read_out2, condition);
+	branch_predictor BP(clk, PC, condition, nextBranchPC);
+	checkCondition checkCondition_module(inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(condition, inputImm_IDEX, outputPC_IFID, correctPC);
+	branch_sig b_sig_module(outputPC_IFID, correctPC, branch_signal);
 	
 	// Initalize
 	initial begin

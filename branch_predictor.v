@@ -1,7 +1,7 @@
 `include "opcodes.v" 
  
  module branch_predictor(/*clk, reset_n, PC, is_flush, is_BJ_type, actual_next_PC, actual_PC, next_PC*/
- 						 PC, correct_address, update_taken, next_PC);
+ 						 clk, PC, correct_address, update_taken, next_PC);
 
 	//input clk;
 	//input reset_n;
@@ -11,6 +11,7 @@
 	//input [`WORD_SIZE-1:0] actual_next_PC; //computed actual next PC from branch resolve stage
 	//input [`WORD_SIZE-1:0] actual_PC; // PC from branch resolve stage
 	
+	input clk;
 	input [`WORD_SIZE-1:0] PC;
 	input update_taken;
 	input correct_address;
@@ -41,8 +42,8 @@
 
 	assign next_PC = (mux_control_wire) ? (BTB[index][15:0]) : (PC + 1);
 
-//2bit global saturation counter
-	always@(*) begin
+	//2bit global saturation counter
+	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
 		if(update_taken ==1) begin
 			if(global_2bit_state !=2)
@@ -108,11 +109,26 @@ module calc_correct(bcond, Imm, PC, correctPC);
 
 	always@(*) begin
 		if(bcond ==1) begin
-			correctPC = PC + Imm;
+			correctPC = PC + Imm + 1;
 		end
 		else begin
 			correctPC = PC + 1;
 		end
 	end
 endmodule
-	
+
+
+module branch_sig(predictPC, correctPC, branch_signal);
+	input [`WORD_SIZE - 1 : 0] predictPC;
+	input [`WORD_SIZE - 1 : 0] correctPC;
+	output reg branch_signal;
+
+	always @(*) begin
+		if(predictPC == correctPC) begin
+			branch_signal = 1'b0;
+		end
+		else begin
+			branch_signal = 1'b1;
+		end	
+	end
+endmodule
