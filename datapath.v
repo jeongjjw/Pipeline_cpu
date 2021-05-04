@@ -246,7 +246,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	branch_predictor BP(clk, PC, correctPC, condition, nextBranchPC);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
-	calc_correct calc_correct_module(clk, condition, inputImm_IDEX, outputPC_IFID, correctPC);
+	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	
 	// Initalize

@@ -99,9 +99,10 @@ module checkCondition(clk, instr, read_out1, read_out2, condition);
 endmodule
 
 
-module calc_correct(clk, bcond, Imm, PC, correctPC);
+module calc_correct(clk, instr, bcond, Imm, PC, correctPC);
 	input clk;
 	input bcond;
+	input [15:0] instr;
 	input [15:0] Imm, PC;
 	output reg [15:0] correctPC;
 
@@ -109,12 +110,16 @@ module calc_correct(clk, bcond, Imm, PC, correctPC);
 		correctPC =0;
 	end
 
+	wire [3:0] opcode;
+	assign opcode = instr[15 : 12];
 	always@(*/*posedge clk*/) begin
-		if(bcond == 1) begin
-			correctPC = PC + Imm;
-		end
-		else begin
-			correctPC = PC + 1;
+		if(opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) begin
+			if(bcond == 1) begin
+				correctPC = PC + Imm;
+			end
+			else begin
+				correctPC = PC + 1;
+			end
 		end
 	end
 endmodule
