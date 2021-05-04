@@ -214,8 +214,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign wwd_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : wwd;
 	assign new_inst_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : reg_write;
-	assign alu_op_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : alu_op;
-	assign ALUsrc_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : ALUsrc;
+	assign alu_op_t = (is_stall == 1'b1|| branch_signal == 1'b1) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal == 1'b1) ? 1'b0 : ALUsrc;
 
 	//control reg modules
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,

@@ -108,8 +108,8 @@ module calc_correct(bcond, Imm, PC, correctPC);
 	end
 
 	always@(*) begin
-		if(bcond ==1) begin
-			correctPC = PC + Imm + 1;
+		if(bcond == 1) begin
+			correctPC = PC + Imm;
 		end
 		else begin
 			correctPC = PC + 1;
@@ -129,7 +129,7 @@ module branch_sig(predictPC, correctPC, branch_signal, instr);
 	end
 
 	wire [3:0] opcode;
-	assign opcode = instr[15 : 11];
+	assign opcode = instr[15 : 12];
 
 	always @(*) begin
 		if(opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) begin
