@@ -57,6 +57,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//wire for wwd
 	wire [15:0] outputWWD_ID, outputWWD_EX, outputWWD_MEM;
+	
+	// wire for next pc
+	wire [`WORD_SIZE-1:0] outputPredictPC_IFID, nextBranchPC;
 
 	// wire for EX
 	wire [15:0] ALU_a, ALU_b_temp, ALU_b;
@@ -70,7 +73,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire reg_write, alu_op, ALUsrc;
 	
 	// pipeline register_modules
-	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write);
+	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write, nextBranchPC, outputPredictPC_IFID);
 	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
 	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
@@ -238,13 +241,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign is_halted = halt_o_M;//check this
 
 	// Branch Predictor
-	wire [`WORD_SIZE - 1:0] nextBranchPC, correctPC;
+	wire [`WORD_SIZE - 1:0] correctPC;
 	wire condition;
 	
 	branch_predictor BP(clk, PC, correctPC, condition, nextBranchPC);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, condition, inputImm_IDEX, outputPC_IFID, correctPC);
-	branch_sig b_sig_module(clk, outputPC_IFID, correctPC, branch_signal, inputIR_IFID);
+	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	
 	// Initalize
 	initial begin

@@ -57,31 +57,34 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
     
 endmodule
 
-module IFID (clk, inputIR, inputPC, outputIR, outputPC, ir_write);
+module IFID (clk, inputIR, inputPC, outputIR, outputPC, ir_write,  nextBranchPC, outputPredictPC_IFID);
 	input clk, ir_write;
-	input [15:0] inputIR, inputPC;
-	output reg [15:0] outputIR, outputPC;
+	input [15:0] inputIR, inputPC, nextBranchPC;
+	output reg [15:0] outputIR, outputPC, outputPredictPC_IFID;
+
 	initial begin
 		outputIR = 0;
 		outputPC = 0;
+		outputPredictPC_IFID = 0;
 	end
 	
 	always @(negedge clk) begin
 		if(ir_write) begin
 			outputIR <= inputIR;
 			outputPC <= inputPC;
+			outputPredictPC_IFID <= nextBranchPC;
 		end
 	end
 	
 endmodule
 
-module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB);
+module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB, outputPC, outputData1, outputData2, outputImm, outputInstr, outputWB/*, is_flush*/);
 	input clk;
 	input [`WORD_SIZE - 1 : 0] inputPC, inputData1, inputData2, inputImm, inputInstr;
 	input [1 : 0] inputWB;
 	output reg [`WORD_SIZE - 1 : 0] outputPC, outputData1, outputData2, outputImm, outputInstr;
 	output reg [1 : 0] outputWB;
-	
+	//input is_flush;
 	initial begin 
 		outputPC = 0; 
 		outputData1 = 0;  
@@ -92,12 +95,14 @@ module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB
 	end
 
 	always @(negedge clk) begin
-		outputPC <= inputPC; 
-		outputData1 <= inputData1;  
-		outputData2 <= inputData2;  
-		outputImm <= inputImm;  
-		outputInstr <= inputInstr;  
-		outputWB <= inputWB;
+		//if(is_flush ==0) begin
+			outputPC <= inputPC; 
+			outputData1 <= inputData1;  
+			outputData2 <= inputData2;  
+			outputImm <= inputImm;  
+			outputInstr <= inputInstr;  
+			outputWB <= inputWB;
+	//	end
 	end
 
 endmodule
@@ -111,7 +116,7 @@ module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, 
 
 	input [15:0] inputWWD;
 	output reg [15:0]outputWWD;
-	
+//	input is_flush;
 	initial begin
 		outputB = 0;
 		outputALUOUT = 0;

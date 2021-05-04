@@ -68,31 +68,31 @@ module checkCondition(clk, instr, read_out1, read_out2, condition);
 	initial begin
 		condition = 0;
 	end
-	always @(posedge clk) begin
+	always @(*) begin
 		case(opcode)
 			`BNE_OP: begin
 				if(read_out1 != read_out2)
-					condition <= 1'b1;
+					condition = 1'b1;
 				else
-					condition <= 1'b0;
+					condition = 1'b0;
 			end
 			`BEQ_OP: begin
 				if(read_out1 == read_out2) 
-					condition <= 1'b1;
+					condition = 1'b1;
 				else 
-					condition <= 1'b0;
+					condition = 1'b0;
 			end
 			`BGZ_OP: begin
 				if($signed(read_out1) > 0) 
-					condition <= 1'b1;
+					condition = 1'b1;
 				else
-					condition <= 1'b0;
+					condition = 1'b0;
 			end
 			`BLZ_OP: begin
 				if($signed(read_out1) < 0) 
-					condition <= 1'b1;
+					condition = 1'b1;
 				else
-					condition <= 1'b0;
+					condition = 1'b0;
 			end
 		endcase
 	end
@@ -109,12 +109,12 @@ module calc_correct(clk, bcond, Imm, PC, correctPC);
 		correctPC =0;
 	end
 
-	always@(posedge clk) begin
+	always@(*/*posedge clk*/) begin
 		if(bcond == 1) begin
-			correctPC <= PC + Imm;
+			correctPC = PC + Imm;
 		end
 		else begin
-			correctPC <= PC + 1;
+			correctPC = PC + 1;
 		end
 	end
 endmodule
