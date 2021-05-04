@@ -41,6 +41,7 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
     always@(*) begin
 		//pc_write = 1;
 		pc_src = 0;
+		halt = 0; 
 		case(opcode)
 		`ALU_OP: begin//ALU, HLT, JPR, JRL, WWD
 			// EX

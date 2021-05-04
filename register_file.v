@@ -27,24 +27,24 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 		i = 0;
 	end
 
-	always@(posedge clk)begin
+	always@(/*posedge clk*/*)begin
 		if(reg_write == 1 && read1 == dest && read2 == dest) begin
-			read_out1 <= write_data;
-			read_out2 <= write_data;
+			read_out1 = write_data;
+			read_out2 = write_data;
 		end
 		else if (reg_write == 1 && read2 == dest && read1 != dest) begin
-			read_out2 <= write_data;
-			read_out1 <= reg_file[read1];
+			read_out2 = write_data;
+			read_out1 = reg_file[read1];
 		end
 		else if (reg_write == 1 && read2 != dest && read1 == dest) begin
-			read_out1 <= write_data;
-			read_out2 <= reg_file[read1];
+			read_out1 = write_data;
+			read_out2 = reg_file[read1];
 		end
 		else begin
-			read_out1 <= reg_file[read1];
-			read_out2 <= reg_file[read2];
+			read_out1 = reg_file[read1];
+			read_out2 = reg_file[read2];
 		end
-		i <= i + 1;
+		i = i + 1;
 		// $strobe("%h : reg %d %d %d %d", i, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
 	end
 

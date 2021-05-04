@@ -57,7 +57,8 @@
 
 endmodule
 
-module checkCondition(instr, read_out1, read_out2, condition);
+module checkCondition(clk, instr, read_out1, read_out2, condition);
+	input clk;
 	input [`WORD_SIZE - 1 : 0] instr, read_out1, read_out2;
 	output reg condition;
 	
@@ -67,31 +68,31 @@ module checkCondition(instr, read_out1, read_out2, condition);
 	initial begin
 		condition = 0;
 	end
-	always @(*) begin
+	always @(posedge clk) begin
 		case(opcode)
 			`BNE_OP: begin
 				if(read_out1 != read_out2)
-					condition = 1'b1;
+					condition <= 1'b1;
 				else
-					condition = 1'b0;
+					condition <= 1'b0;
 			end
 			`BEQ_OP: begin
 				if(read_out1 == read_out2) 
-					condition = 1'b1;
+					condition <= 1'b1;
 				else 
-					condition = 1'b0;
+					condition <= 1'b0;
 			end
 			`BGZ_OP: begin
 				if($signed(read_out1) > 0) 
-					condition = 1'b1;
+					condition <= 1'b1;
 				else
-					condition = 1'b0;
+					condition <= 1'b0;
 			end
 			`BLZ_OP: begin
 				if($signed(read_out1) < 0) 
-					condition = 1'b1;
+					condition <= 1'b1;
 				else
-					condition = 1'b0;
+					condition <= 1'b0;
 			end
 		endcase
 	end

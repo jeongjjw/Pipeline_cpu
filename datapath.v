@@ -207,18 +207,18 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	reg branch_signal_t;
 
-	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : pc_write_cond;
-	assign mem_read_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : mem_read;
-	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : mem_to_reg;
-	assign mem_write_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : mem_write;
-	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : pc_to_reg;
-	assign pc_src_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : pc_src;
-	assign halt_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : halt;
-	assign wwd_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : new_inst;
-	assign reg_write_t = (is_stall == 1'b1 || branch_signal_t == 1'b1) ? 1'b0 : reg_write;
-	assign alu_op_t = (is_stall == 1'b1|| branch_signal_t == 1'b1) ? 1'b0 : alu_op;
-	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_t == 1'b1) ? 1'b0 : ALUsrc;
+	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_write_cond;
+	assign mem_read_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_read;
+	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_to_reg;
+	assign mem_write_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : mem_write;
+	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_to_reg;
+	assign pc_src_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : pc_src;
+	assign halt_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : halt;
+	assign wwd_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : wwd;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : new_inst;
+	assign reg_write_t = (is_stall == 1'b1 || branch_signal == 1'b1) ? 1'b0 : reg_write;
+	assign alu_op_t = (is_stall == 1'b1|| branch_signal == 1'b1) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal == 1'b1) ? 1'b0 : ALUsrc;
 
 	//control reg modules
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
@@ -242,7 +242,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire condition;
 	
 	branch_predictor BP(clk, PC, correctPC, condition, nextBranchPC);
-	checkCondition checkCondition_module(inputIR_IFID, read_out1, read_out2, condition);
+	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, condition, inputImm_IDEX, outputPC_IFID, correctPC);
 	branch_sig b_sig_module(clk, outputPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	
@@ -320,14 +320,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		if(wwd_o_M == 1'b1) begin
 			output_port <= outputWWD_MEM;
 		end		
-
+		/*
 		if(branch_signal == 1) begin
 			branch_signal_t <=1;
 		end
 		//delay branch_signal by one clock
 		if(branch_signal_t ==1)begin
 			branch_signal_t <=0;
-		end
+		end*/
 	end
 
 endmodule
