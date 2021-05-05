@@ -231,6 +231,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//JPR or JRL
 	reg [3:0] count_J;
 	reg pc_write_JPR_JRL;
+	//jsigs
+	wire Jsig_IFID_i, Jsig_IFID_o, Jsig_IDEX_o, Jsig_EXMEM_o, Jsig_MEMWB_o;
+	wire Jsig_last_o;
 
 	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_write_cond;
 	assign mem_read_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_read;
@@ -249,15 +252,17 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
 		wwd_t, new_inst_t, reg_write_t, alu_op_t, ALUsrc_t, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
-		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall, is_stall_o);
+		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall, is_stall_o, Jsig_IFID_o, Jsig_IDEX_o);
 	
 
 	EXMEM_Control EXMEM_Control_Module(clk, pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o,
 			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o,
 			pc_write_cond_o_E, /*pc_write_o_E,*/ i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E,
-			mem_write_o_E, /*ir_write_o_E,*/ pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E);
+			mem_write_o_E, /*ir_write_o_E,*/ pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E, Jsig_IDEX_o, Jsig_EXMEM_o);
 
-	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E);
+	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E, Jsig_EXMEM_o,Jsig_MEMWB_o);
+	IFID_Control IFID_Control_module(clk, Jsig_IFID_i, Jsig_IFID_o);
+	last_signal_pipe last_signal_pipe_module(clk, Jsig_MEMWB_o, Jsig_last_o);
 
 	reg flagRegister, count, flag_J;
 	assign is_halted = halt_o_M;//check this
@@ -274,6 +279,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	always @(*) begin
 		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J != 1'b1)) begin 
 			pc_write_JPR_JRL=0;
+		end
+		if(count_J == 0 && (flag_J == 1'b1)) begin
+			pc_write_JPR_JRL = 1'b1;
+			
 		end
 	end
 
@@ -312,7 +321,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 		else begin
 			if(count != 1'b0 && pc_write == 1'b1 && pc_write_JPR_JRL == 1'b1) begin
-				flag_J = 1'b0;
 				if(branch_signal == 1'b1) begin
 					PC <= correctPC;
 				end
@@ -387,17 +395,18 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 4)) begin
 				count_J <= count_J + 1;				
 			end
+
+			if(count_J == 1) begin
+				flag_J <= 1'b0;
+			end
 			
 			if(count_J == 3) begin
-				pc_write_JPR_JRL <= 1'b1;
-			end
-
-			if(count_J == 4) begin
 				flag_J <= 1'b1;
-				// pc_write_JPR_JRL <= 1'b1;
+				// pc_write_JPR_JRL <= 1'b1;	
+			end
+			if(count_J ==4) begin
 				count_J <= 1'b0;
 			end
-
 			/*if(count_J == 4) begin
 				count_J <=0;
 				pc_write_JPR_JRL <= 1;

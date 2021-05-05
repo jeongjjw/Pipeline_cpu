@@ -170,20 +170,31 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 		outputPC_WB <= outputPC_EXMEM;
 		outputInstr_MEMWB <= outputInstr_EXMEM;
 	end
-	
 endmodule
 
+module IFID_Control (clk, Jsig_IFID_i, Jsig_IFID_o);
+	input Jsig_IFID_i, clk;
+	output reg Jsig_IFID_o;
+
+	initial begin
+		Jsig_IFID_o = 1'b0;
+	end
+
+	always @(negedge clk) begin
+		Jsig_IFID_o <= Jsig_IFID_i;
+	end 
+endmodule
 
 module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i,
 		wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
-		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall, is_stall_o);
-	input clk, is_stall;
+		wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o, is_stall, is_stall_o, Jsig_IDEX_i , Jsig_IDEX_o);
+	input clk, is_stall, Jsig_IDEX_i;
 	input pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
 	output reg pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 	input [1:0] pc_src_i;
 	output reg [1:0] pc_src_o;
-	output reg is_stall_o;
+	output reg is_stall_o, Jsig_IDEX_o;
 	always @(negedge clk) begin
 		pc_write_cond_o <= pc_write_cond_i;
 		// pc_write_o <= pc_write_o; 
@@ -200,6 +211,7 @@ module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_re
 		alu_op_o <= alu_op_i; 
 		ALUsrc_o <= ALUsrc_i;
 		is_stall_o <=is_stall;
+		Jsig_IDEX_o <= Jsig_IDEX_i;
 	end
 
 endmodule
@@ -207,13 +219,13 @@ endmodule
 module EXMEM_Control(clk, pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i, mem_to_reg_i,
 			mem_write_i, /*ir_write_i,*/ pc_to_reg_i, pc_src_i, halt_i, wwd_i, new_inst_i, reg_write_i,
 			pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o,
-			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o);
+			mem_write_o, /*ir_write_o,*/ pc_to_reg_o, pc_src_o, halt_o, wwd_o, new_inst_o, reg_write_o, Jsig_EXMEM_i, Jsig_EXMEM_o);
 	input clk;
 	input pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i, mem_to_reg_i;
-	input mem_write_i, /*ir_write_i,*/ pc_to_reg_i,  halt_i, wwd_i, new_inst_i, reg_write_i;
+	input mem_write_i, /*ir_write_i,*/ pc_to_reg_i,  halt_i, wwd_i, new_inst_i, reg_write_i, Jsig_EXMEM_i;
 
 	output reg pc_write_cond_o, /*pc_write_o,*/ i_or_d_o, mem_read_o, mem_to_reg_o;
-	output reg mem_write_o, /*ir_write_o,*/ pc_to_reg_o,  halt_o, wwd_o, new_inst_o, reg_write_o;
+	output reg mem_write_o, /*ir_write_o,*/ pc_to_reg_o,  halt_o, wwd_o, new_inst_o, reg_write_o, Jsig_EXMEM_o;
 	input [1:0] pc_src_i;
 	output reg [1:0] pc_src_o;
 	always@(negedge clk) begin
@@ -230,13 +242,14 @@ module EXMEM_Control(clk, pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i,
 		wwd_o <= wwd_i;
 		new_inst_o <= new_inst_i;
 		reg_write_o <= reg_write_i;
+		Jsig_EXMEM_o <= Jsig_EXMEM_i;
 	end
 endmodule
 
-module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i, mem_to_reg_o, mem_to_reg_i, pc_to_reg_o, pc_to_reg_i);
+module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i, mem_to_reg_o, mem_to_reg_i, pc_to_reg_o, pc_to_reg_i, Jsig_MEMWB_i, Jsig_MEMWB_o);
 	input clk;
-	input reg_write_i, new_inst_i, wwd_i, halt_i, mem_to_reg_i, pc_to_reg_i;
-	output reg reg_write_o, new_inst_o, wwd_o, halt_o, mem_to_reg_o, pc_to_reg_o;
+	input reg_write_i, new_inst_i, wwd_i, halt_i, mem_to_reg_i, pc_to_reg_i, Jsig_MEMWB_i;
+	output reg reg_write_o, new_inst_o, wwd_o, halt_o, mem_to_reg_o, pc_to_reg_o, Jsig_MEMWB_o;
 
 	always@(negedge clk) begin
 		reg_write_o <= reg_write_i;
@@ -245,6 +258,21 @@ module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_
 		new_inst_o <= new_inst_i;
 		mem_to_reg_o <= mem_to_reg_i;
 		pc_to_reg_o <= pc_to_reg_i;
+		Jsig_MEMWB_o <= Jsig_MEMWB_i;
 	end
 	
+endmodule
+
+
+module last_signal_pipe(clk, Jsig_last_i, Jsig_last_o);
+	input clk, Jsig_last_i;
+	output reg Jsig_last_o;
+
+	initial begin
+		Jsig_last_o = 0;
+	end
+	always@(negedge clk) begin
+		Jsig_last_o <= Jsig_last_i;
+	end	
+		
 endmodule
