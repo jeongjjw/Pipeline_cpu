@@ -158,7 +158,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 
 	//assign for MEM data 
-	assign inputWB_MEMWB = outputWB_IDEX;
+	assign inputWB_MEMWB = outputWB_EXMEM;
 	assign address2 = outputALUOUT_EXMEM;
 	assign data2 = write_m2 ? outputB_EXMEM : 16'bz;
 	assign inputALUResult_MEMWB = outputALUOUT_EXMEM;
@@ -193,7 +193,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// datapath EX
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, forwarding_ALUout, 16'b0, ALU_b_temp);
-	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, outputPC_WB, write_data_final);
+	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, outputPC_WB + 1, write_data_final);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
 	
 	// wire new_inst
@@ -219,18 +219,22 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] pc_src_t;
 	wire is_stall_o;
 
-	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : pc_write_cond;
-	assign mem_read_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : mem_read;
-	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : mem_to_reg;
-	assign mem_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : mem_write;
-	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : pc_to_reg;
-	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : pc_src;
-	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : halt;
-	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : new_inst;
-	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : reg_write;
-	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1) ? 1'b0 : alu_op;
-	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1) ? 1'b0 : ALUsrc;
+	//JPR or JRL
+	reg [3:0] count_J;
+	reg pc_write_JPR_JRL;
+
+	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_write_cond;
+	assign mem_read_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_read;
+	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_to_reg;
+	assign mem_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_write;
+	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_to_reg;
+	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
+	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
+	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : new_inst;
+	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
+	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
 
 	//control reg modules
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
@@ -246,7 +250,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E);
 
-	reg flagRegister, count;
+	reg flagRegister, count, flag_J;
 	assign is_halted = halt_o_M;//check this
 
 	// Branch Predictor
@@ -258,6 +262,11 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 
+	always @(*) begin
+		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J != 1'b1)) begin 
+			pc_write_JPR_JRL=0;
+		end
+	end
 
 	// Initalize
 	initial begin
@@ -270,7 +279,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		read_m2_reg_temp = 1'b0;
 		count = 1'b0;
 		branch_signal_reg = 1'b0;
+		pc_write_JPR_JRL = 1'b1;
 	//	is_stall_reg = 0;
+		count_J =0;
+		flag_J = 1'b0;
 	end
 	
 	always @(posedge clk) begin
@@ -284,10 +296,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			read_m2_reg_temp <= 1'b0;
 			count <= 1'b0;
 			branch_signal_reg <= 1'b0;
+			pc_write_JPR_JRL <= 1'b1;
+			count_J <= 0;
+			flag_J <= 1'b0;
 		end
 
 		else begin
-			if(count != 1'b0 && pc_write == 1'b1) begin
+			if(count != 1'b0 && pc_write == 1'b1 && pc_write_JPR_JRL == 1'b1) begin
+				flag_J = 1'b0;
 				if(branch_signal == 1'b1) begin
 					PC <= correctPC;
 				end
@@ -300,6 +316,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				end
 				else if(pc_src == 2) begin
 					PC <= nextBranchPC;
+				end
+				else if(pc_src == 3) begin
+					PC <= read_out1;
 				end
 			end
 
@@ -355,6 +374,20 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			end
 
 			branch_signal_reg <= branch_signal;
+			
+			if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 4)) begin
+				count_J <= count_J + 1;				
+			end
+			
+			if(countJ == 3) begin
+				flag_J <= 1'b1;
+			end
+
+			if(count_J == 4) begin
+				count_J <=0;
+				pc_write_JPR_JRL <= 1;
+			end
+			
 		end
 	end
 
