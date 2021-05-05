@@ -45,7 +45,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//wire into EX MEM
 	wire [15:0] inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM;
 	wire [1 : 0] inputWB_EXMEM;
-	wire [15:0] outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM;
+	wire [15:0] outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputPC_WB;
 	wire [1 : 0] outputWB_EXMEM;
 
 
@@ -77,10 +77,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	// pipeline register_modules
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write, nextBranchPC, outputPredictPC_IFID);
-	IDEX idex(clk, inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
+	IDEX idex(clk, outputPC_IFID, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
-	EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
-	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM);
+	EXMEM exmem(clk, outputPC_IDEX, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
+	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM, outputPC_EXMEM, outputPC_WB);
 
 	//wire for hazard unit
 	wire [`WORD_SIZE-1:0] IFID_IR;
@@ -180,9 +180,11 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] pc_src_o_E;
 	// mem/wb control
 	// wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
-	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M;
+	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M, pc_to_reg_o_M;
 	
 	wire branch_signal;
+
+	wire [`WORD_SIZE - 1: 0] write_data_final;
 
 	//assign for MEM control
 	assign write_m2 = mem_write_o_E;
@@ -191,6 +193,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// datapath EX
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, forwarding_ALUout, 16'b0, ALU_b_temp);
+	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, outputPC_WB, write_data_final);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
 	
 	// wire new_inst
@@ -206,7 +209,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	alu alu_module(ALU_a, ALU_b, funcCode, branchType, inputALUOUT_EXMEM, overflow_flag, bcond);
 
 	//Register file
-	register_file register_module(read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data, reg_write_o_M, clk, reset_n);
+	register_file register_module(outputPC_WB, read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data_final, reg_write_o_M, clk, reset_n);
 
 	//ImmGen Modul
 	ImmGen immgen_module(inputIR_IFID, inputImm_IDEX);	 
@@ -241,7 +244,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			pc_write_cond_o_E, /*pc_write_o_E,*/ i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E,
 			mem_write_o_E, /*ir_write_o_E,*/ pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E);
 
-	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E);
+	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E);
 
 	reg flagRegister, count;
 	assign is_halted = halt_o_M;//check this
@@ -299,6 +302,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= nextBranchPC;
 				end
 			end
+
 			// read_m1_reg <= 1'b1;
 			address1_reg <= PC;
 			count <= 1'b1;

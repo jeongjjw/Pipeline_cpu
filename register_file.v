@@ -1,7 +1,8 @@
 `include "opcodes.v" 
 
-module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_write, clk, reset_n);
+module register_file (PC, read_out1, read_out2, read1, read2, dest, write_data, reg_write, clk, reset_n);
 
+	input [`WORD_SIZE - 1 : 0] PC;
 	input clk, reset_n;
 	input [1:0] read1;
 	input [1:0] read2;
@@ -15,8 +16,6 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 	//TODO: implement register file
 	reg [15:0] reg_file [0:3];
 
-	integer i;
-
 	initial begin
 		reg_file[0] = 0;
 		reg_file[1] = 0;
@@ -24,7 +23,6 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 		reg_file[3] = 0;
 		read_out1 = 0;
 		read_out2 = 0;
-		i = 0;
 	end
 
 	always@(/*posedge clk*/*)begin
@@ -44,8 +42,7 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 			read_out1 = reg_file[read1];
 			read_out2 = reg_file[read2];
 		end
-		i = i + 1;
-		// $strobe("%h : reg %d %d %d %d", i, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
+		$strobe("%h : reg %d %d %d %d", PC, reg_file[0], reg_file[1], reg_file[2], reg_file[3]);
 	end
 
 	always@(posedge clk) begin
@@ -130,20 +127,22 @@ module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, 
 	end
 endmodule
 
-module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, outputALUResult, outputWB, inputWWD, outputWWD);
+module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, outputALUResult, outputWB, inputWWD, outputWWD
+	, outputPC_EXMEM, outputPC_WB);
 	input clk;
 	input [15:0] inputReadData, inputALUResult;
 	input [1 : 0] inputWB;
 	output reg [15:0] outputReadData, outputALUResult;
 	output reg [1 : 0]outputWB;
-
+	input [15:0] outputPC_EXMEM;
 	input [15:0] inputWWD;
 	output reg [15:0] outputWWD;
-
+	output reg [15:0] outputPC_WB;
 	initial begin
 		outputReadData = 0;
 		outputALUResult = 0;
 		outputWB = 0;
+		outputPC_WB = 0;
 	end
 
 	always@(negedge clk) begin
@@ -151,6 +150,7 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 		outputALUResult <= inputALUResult;
 		outputWB <= inputWB;
 		outputWWD <= inputWWD;
+		outputPC_WB <= outputPC_EXMEM;
 	end
 	
 endmodule
@@ -215,10 +215,10 @@ module EXMEM_Control(clk, pc_write_cond_i, /*pc_write_i,*/ i_or_d_i, mem_read_i,
 	end
 endmodule
 
-module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i, mem_to_reg_o, mem_to_reg_i);
+module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_i, wwd_o, halt_o, halt_i, mem_to_reg_o, mem_to_reg_i, pc_to_reg_o, pc_to_reg_i);
 	input clk;
-	input reg_write_i, new_inst_i, wwd_i, halt_i, mem_to_reg_i;
-	output reg reg_write_o, new_inst_o, wwd_o, halt_o, mem_to_reg_o;
+	input reg_write_i, new_inst_i, wwd_i, halt_i, mem_to_reg_i, pc_to_reg_i;
+	output reg reg_write_o, new_inst_o, wwd_o, halt_o, mem_to_reg_o, pc_to_reg_o;
 
 	always@(negedge clk) begin
 		reg_write_o <= reg_write_i;
@@ -226,6 +226,7 @@ module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_
 		wwd_o <= wwd_i;
 		new_inst_o <= new_inst_i;
 		mem_to_reg_o <= mem_to_reg_i;
+		pc_to_reg_o <= pc_to_reg_i;
 	end
 	
 endmodule

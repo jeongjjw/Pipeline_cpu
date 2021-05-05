@@ -41,7 +41,8 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
     always@(*) begin
 		//pc_write = 1;
 		pc_src = 0;
-		halt = 0; 
+		halt = 0;
+		pc_to_reg = 0; 
 		case(opcode)
 		`ALU_OP: begin//ALU, HLT, JPR, JRL, WWD
 			// EX
@@ -54,17 +55,16 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 				reg_write = 1'b0;
 			end
 			else if(func_code == `INST_FUNC_HLT ) begin
-				halt = 1;
+				halt = 1'b1;
 				reg_write = 1'b0;
 			end
-			/*
 			else if(func_code == `INST_FUNC_JPR ) begin
 				reg_write = 1'b0;
 			end
 			else if(func_code == `INST_FUNC_JRL) begin
 				reg_write = 1'b1;
-				pc_src
-			end*/
+				pc_to_reg = 1'b1;
+			end
 			else begin
 				wwd = 1'b0;
 				reg_write = 1'b1;
@@ -148,10 +148,11 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 			wwd = 1'b0;
 			// WB
 			mem_to_reg = 1'b0;
-			reg_write = 1'b0;
+			reg_write = 1'b1;
 			new_inst = 1'b1;
-
-			pc_src = 1;
+			
+			pc_to_reg = 1'b1;
+			pc_src = 1'b1;
 		end
 		endcase
 	end
