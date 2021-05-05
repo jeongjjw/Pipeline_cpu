@@ -104,31 +104,45 @@ module IDEX (clk, inputPC, inputData1, inputData2, inputImm, inputInstr, inputWB
 
 endmodule
 
-module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, outputPC, outputWB, inputWWD, outputWWD);
+module EXMEM(clk, inputPC, inputALUOUT, inputB, inputWB, outputB, outputALUOUT, outputPC, outputWB, inputWWD, outputWWD, inputInstr_EXMEM, outputInstr_EXMEM);
 	input clk;
-	input [15:0] inputPC, inputALUOUT, inputB; 
+	input [15:0] inputPC, inputALUOUT, inputB, inputInstr_EXMEM; 
 	input [1 : 0] inputWB;
-	output reg [15:0] outputB, outputALUOUT, outputPC;
+	output reg [15:0] outputB, outputALUOUT, outputPC, outputInstr_EXMEM;
 	output reg [1 : 0] outputWB;
 
 	input [15:0] inputWWD;
 	output reg [15:0]outputWWD;
-//	input is_flush;
+
+	wire [3 : 0] opcode;
+	wire [5 : 0] func_code;
+
+	assign opcode = inputInstr_EXMEM[15 : 12];
+	assign func_code = inputInstr_EXMEM[5 : 0];
+
+	//	input is_flush;
 	initial begin
 		outputB = 0;
 		outputALUOUT = 0;
 	end
 	always@(negedge clk) begin
 		outputB <= inputB;
-		outputALUOUT <= inputALUOUT;
+		// outputALUOUT <= inputALUOUT;
 		outputPC <= inputPC;
 		outputWB <= inputWB;
 		outputWWD <= inputWWD;
+		outputInstr_EXMEM <= inputInstr_EXMEM;
+		if(opcode == `JAL_OP || (opcode == `JRL_OP && func_code == `INST_FUNC_JRL)) begin
+			outputALUOUT <= inputPC + 16'b1; 
+		end
+		else begin
+			outputALUOUT <= inputALUOUT;
+		end
 	end
 endmodule
 
 module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, outputALUResult, outputWB, inputWWD, outputWWD
-	, outputPC_EXMEM, outputPC_WB);
+	, outputPC_EXMEM, outputPC_WB,  outputInstr_EXMEM, outputInstr_MEMWB);
 	input clk;
 	input [15:0] inputReadData, inputALUResult;
 	input [1 : 0] inputWB;
@@ -136,6 +150,8 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 	output reg [1 : 0]outputWB;
 	input [15:0] outputPC_EXMEM;
 	input [15:0] inputWWD;
+	input  [15:0] outputInstr_EXMEM;
+	output reg [15:0] outputInstr_MEMWB;
 	output reg [15:0] outputWWD;
 	output reg [15:0] outputPC_WB;
 	initial begin
@@ -143,6 +159,7 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 		outputALUResult = 0;
 		outputWB = 0;
 		outputPC_WB = 0;
+		outputInstr_MEMWB = 0;
 	end
 
 	always@(negedge clk) begin
@@ -151,6 +168,7 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 		outputWB <= inputWB;
 		outputWWD <= inputWWD;
 		outputPC_WB <= outputPC_EXMEM;
+		outputInstr_MEMWB <= outputInstr_EXMEM;
 	end
 	
 endmodule

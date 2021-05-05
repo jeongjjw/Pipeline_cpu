@@ -55,6 +55,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [`WORD_SIZE - 1 : 0] outputReadData_MEMWB, outputALUResult_MEMWB;
 	wire [1 : 0] outputWB_MEMWB;	
 	
+	//address1_reg;
+	wire[15:0] outputInstr_MEMWB, outputInstr_EXMEM, inputInstr_EXMEM;
+	assign inputInstr_EXMEM = outputInstr_IDEX;
 	// Register
 	reg [`WORD_SIZE - 1 : 0] PC;
 
@@ -79,8 +82,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write, nextBranchPC, outputPredictPC_IFID);
 	IDEX idex(clk, outputPC_IFID, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
 	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
-	EXMEM exmem(clk, outputPC_IDEX, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX );
-	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM, outputPC_EXMEM, outputPC_WB);
+	EXMEM exmem(clk, outputPC_IDEX, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX, inputInstr_EXMEM, outputInstr_EXMEM);
+	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM, outputPC_EXMEM, outputPC_WB, outputInstr_EXMEM, outputInstr_MEMWB);
 
 	//wire for hazard unit
 	wire [`WORD_SIZE-1:0] IFID_IR;
@@ -106,7 +109,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] read1;
 	wire [1:0] read2;
 	wire [1:0] dest;
-	wire [`WORD_SIZE-1:0] write_data;
+	wire [`WORD_SIZE-1:0] write_data, write_data_t;
 	wire [`WORD_SIZE-1:0] read_out1;
 	wire [`WORD_SIZE-1:0] read_out2;
 
@@ -123,7 +126,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign read_m1 = read_m1_reg;
 	assign read_m2 = read_m2_reg;
 	assign address1 = PC;
-//address1_reg;
 
 	//assign for IFID pipe
 	assign inputPC_IFID = PC;
@@ -165,7 +167,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
 	
 	//WB state
-	mux2_1 mux_LWD_or_aluoperation(mem_to_reg_o_M, outputALUOUT_EXMEM, data2, write_data);//directly connect wire
+	mux2_1 mux_LWD_or_aluoperation(mem_to_reg_o_M, outputALUOUT_EXMEM, data2, write_data_t);//directly connect wire
+	
+	//assign writedata whether it is value from write_data_t of JRL
+	wire [3:0] mem_opcode;
+	wire [5:0] mem_func_code;
+	assign mem_opcode = outputInstr_MEMWB[15:12];
+	assign mem_func_code = outputInstr_MEMWB[5:0];
+	assign write_data = (mem_opcode == 10 || (mem_opcode==15 && mem_func_code == 26)) ? outputPC_WB + 1 : write_data_t;
 
 	// control reg wires
 	// ID / EX control
@@ -193,7 +202,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// datapath EX
 	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, forwarding_ALUout, 16'b0, ALU_b_temp);
-	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, outputPC_WB + 1, write_data_final);
+	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, (outputPC_WB + 16'b1), write_data_final);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
 	
 	// wire new_inst
