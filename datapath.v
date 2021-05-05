@@ -167,7 +167,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
 	
 	//WB state
-	mux2_1 mux_LWD_or_aluoperation(mem_to_reg_o_M, outputALUOUT_EXMEM, data2, write_data_t);//directly connect wire
+	mux2_1 mux_LWD_or_aluoperation(mem_to_reg_o_M, outputALUResult_MEMWB, data2, write_data_t);//directly connect wire
 	
 	//assign writedata whether it is value from write_data_t of JRL
 	wire [3:0] mem_opcode;
