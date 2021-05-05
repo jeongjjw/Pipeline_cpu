@@ -379,15 +379,20 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				count_J <= count_J + 1;				
 			end
 			
-			if(countJ == 3) begin
-				flag_J <= 1'b1;
+			if(count_J == 3) begin
+				pc_write_JPR_JRL <= 1'b1;
 			end
 
 			if(count_J == 4) begin
+				flag_J <= 1'b1;
+				// pc_write_JPR_JRL <= 1'b1;
+				count_J <= 1'b0;
+			end
+
+			/*if(count_J == 4) begin
 				count_J <=0;
 				pc_write_JPR_JRL <= 1;
-			end
-			
+			end */
 		end
 	end
 
