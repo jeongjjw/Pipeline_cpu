@@ -142,6 +142,8 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 			mem_to_reg = 1'b0;
 			reg_write = 1'b0;
 			new_inst = 1'b1;
+
+			pc_src = 1;
 		end
 		endcase
 	end
@@ -159,8 +161,7 @@ module alu_control_unit(func_code, opcode, ALUOp, clk, funcCode, branchType);
 
 	always@(*) begin
 		funcCode = 0;
-		case(opcode)
-		
+		case(opcode)	
 			`ALU_OP: begin 
 				branchType = 2'b0;
 				funcCode[3] = 0;

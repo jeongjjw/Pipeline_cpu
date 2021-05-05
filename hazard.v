@@ -22,10 +22,15 @@ module hazard_detect(clk, IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall, pc_write,
 		ir_write = 1;
 	end
 
+	wire [3 : 0] opcode;
+	wire [5 : 0] funccode;
+	assign opcode = IFID_IR[15 : 12];
+	assign funccode = IFID_IR[5 : 0];
+
 	always@(*) begin
 		rs1 = IFID_IR[11:10];
 		rs2 = IFID_IR[9:8];
-		if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1 || IDEX_rd == rs2)) begin
+		/*if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1 || IDEX_rd == rs2)) begin
 			is_stall = 1;
 			ir_write = 0;
 			pc_write = 0;
@@ -34,7 +39,61 @@ module hazard_detect(clk, IFID_IR, IDEX_rd, IDEX_M_mem_read, is_stall, pc_write,
 			is_stall = 0;
 			ir_write = 1;
 			pc_write = 1;
-		end
+		end*/
+		case(opcode)
+			`ALU_OP: begin
+				case(funccode)
+					`INST_FUNC_ADD, `INST_FUNC_SUB, `INST_FUNC_AND, `INST_FUNC_ORR: begin
+						if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1 || IDEX_rd == rs2)) begin
+							is_stall = 1;
+							ir_write = 0;
+							pc_write = 0;
+						end
+						else begin
+							is_stall = 0;
+							ir_write = 1;
+							pc_write = 1;
+						end
+					end
+					`INST_FUNC_NOT, `INST_FUNC_TCP, `INST_FUNC_SHL, `INST_FUNC_SHR, `INST_FUNC_JPR, `INST_FUNC_JRL, `INST_FUNC_WWD: begin
+						if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1)) begin
+							is_stall = 1;
+							ir_write = 0;
+							pc_write = 0;
+						end
+						else begin
+							is_stall = 0;
+							ir_write = 1;
+							pc_write = 1;
+						end
+					end
+				endcase
+			end
+			`ADI_OP, `ORI_OP, `LHI_OP, `LWD_OP, `SWD_OP: begin
+				if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1)) begin
+					is_stall = 1;
+					ir_write = 0;
+					pc_write = 0;
+				end
+				else begin
+					is_stall = 0;
+					ir_write = 1;
+					pc_write = 1;
+				end
+			end
+			`BNE_OP, `BEQ_OP, `BGZ_OP, `BLZ_OP: begin
+				if((IDEX_M_mem_read == 1) && (IDEX_rd == rs1 || IDEX_rd == rs2)) begin
+					is_stall = 1;
+					ir_write = 0;
+					pc_write = 0;
+				end
+				else begin
+					is_stall = 0;
+					ir_write = 1;
+					pc_write = 1;
+				end
+			end
+		endcase
  		/*
 		if(is_stall ==0) begin
 			pc_write = 1;

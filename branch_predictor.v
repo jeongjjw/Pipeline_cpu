@@ -14,7 +14,7 @@
 	input clk;
 	input [`WORD_SIZE-1:0] PC;
 	input update_taken;
-	input correct_address;
+	input [`WORD_SIZE-1:0] correct_address;
 
 	output [`WORD_SIZE-1:0] next_PC;
 
