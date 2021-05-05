@@ -224,7 +224,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall_o == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1) ? 1'b0 : ALUsrc;
@@ -302,55 +302,56 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			// read_m1_reg <= 1'b1;
 			address1_reg <= PC;
 			count <= 1'b1;
-		end
 
-		if(is_stall == 1'b1) begin
-			read_m1_reg <= 1'b0;
-		end
+			
+			if(is_stall == 1'b1) begin
+				read_m1_reg <= 1'b0;
+			end
 
-		else begin
-			read_m1_reg <= 1'b1;
-		end
+			else begin
+				read_m1_reg <= 1'b1;
+			end
 		
-		if(mem_read_o_E == 1'b1) begin
-			read_m2_reg <= 1;
-			read_m2_reg_temp <= 1;
-		end
-		else if(read_m2_reg_temp ==1) begin
-			read_m2_reg_temp <= 0;
-			read_m2_reg <= 1;
-		end
-		else begin
-			read_m2_reg <= 0;
-		end
+			if(mem_read_o_E == 1'b1) begin
+				read_m2_reg <= 1;
+				read_m2_reg_temp <= 1;
+			end
+			else if(read_m2_reg_temp ==1) begin
+				read_m2_reg_temp <= 0;
+				read_m2_reg <= 1;
+			end
+			else begin
+				read_m2_reg <= 0;
+			end
 
-		if(is_stall  == 0) begin
-			forwarding_ALUout <= outputALUOUT_EXMEM;
-		end
-		/*
-		if(is_stall ==1) begin
-			is_stall_reg <=1;
-		end
-		else begin
-			is_stall_reg <= 0;
-		end*/
+			if(is_stall  == 0) begin
+				forwarding_ALUout <= outputALUOUT_EXMEM;
+			end
+			/*
+			if(is_stall ==1) begin
+				is_stall_reg <=1;
+			end
+			else begin
+				is_stall_reg <= 0;
+			end*/
 
 
-		if(flagRegister == 1'b1) begin
-			flagRegister <= 1'b0;
-			num_inst <= (num_inst + 1);
-		end
+			if(flagRegister == 1'b1) begin
+				flagRegister <= 1'b0;
+				num_inst <= (num_inst + 1);
+			end
 
-		if(new_inst_o_M == 1'b1) begin
-			//num_inst <= (num_inst + 1);
-			flagRegister <= 1'b1;
-		end
+			if(new_inst_o_M == 1'b1) begin
+				//num_inst <= (num_inst + 1);
+				flagRegister <= 1'b1;
+			end
 
-		if(wwd_o_M == 1'b1) begin
-			output_port <= outputWWD_MEM;
-		end
+			if(wwd_o_M == 1'b1) begin
+				output_port <= outputWWD_MEM;
+			end
 
-		branch_signal_reg <= branch_signal;
+			branch_signal_reg <= branch_signal;
+		end
 	end
 
 endmodule
