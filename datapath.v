@@ -195,7 +195,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	
 	//control modules
 	control_unit control_unit_module(opcode, func_code, clk, reset_n, pc_write_cond, /*pc_write,*/ mem_read, mem_to_reg, mem_write, /*ir_write,*/ pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_op, ALUsrc);
-	hazard_detect hazard_detection_module(clk, inputInstr_IDEX, outputWB_EXMEM, mem_read_o_E, is_stall, pc_write, ir_write);
+	hazard_detect hazard_detection_module(clk, inputIR_IFID, outputWB_IDEX, mem_read_o, is_stall, pc_write, ir_write);
 	forwarding_unit forwarding_module(clk, forward_A, forward_B, inputInstr_IDEX[11:10], inputInstr_IDEX[9:8], reg_write_o_E, reg_write_o_M, outputWB_EXMEM, outputWB_MEMWB);
 	alu_control_unit alu_control_module(inputInstr_IDEX[5:0], inputInstr_IDEX[15:12], 2'b0, clk, funcCode, branchType);
 	//ALU module
@@ -249,7 +249,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
-	
+
+
 	// Initalize
 	initial begin
 		PC = 0;
@@ -267,9 +268,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		if(!reset_n) begin
 			PC <= 0;
 			read_m1_reg <= 1'b0;
+			num_inst <= 0;
 			flagRegister <= 1'b0;
+			forwarding_ALUout <= 16'b0;
 			read_m2_reg <= 1'b0;
+			read_m2_reg_temp <= 1'b0;
 			count <= 1'b0;
+			branch_signal_reg <= 1'b0;
 		end
 
 		else begin
@@ -288,9 +293,17 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 					PC <= nextBranchPC;
 				end
 			end
-			read_m1_reg <= 1'b1;
+			// read_m1_reg <= 1'b1;
 			address1_reg <= PC;
 			count <= 1'b1;
+		end
+
+		if(is_stall == 1'b1) begin
+			read_m1_reg <= 1'b0;
+		end
+
+		else begin
+			read_m1_reg <= 1'b1;
 		end
 		
 		if(mem_read_o_E == 1'b1) begin

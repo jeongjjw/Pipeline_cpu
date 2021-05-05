@@ -183,7 +183,18 @@ module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_re
 			ALUsrc_o <= ALUsrc_i;
 		end
 		else begin
+			pc_write_cond_o <= 0;
+			mem_read_o <= 0;
+			mem_to_reg_o <= 0;
+			mem_write_o <= 0;
 			new_inst_o <= 0;
+			pc_src_o <= 0; 
+			pc_to_reg_o <= 0; 
+			halt_o <=0; 
+			wwd_o <= 0;
+			reg_write_o <= 0; 
+			alu_op_o <= 0; 
+			ALUsrc_o <= 0;
 		end
 	end
 

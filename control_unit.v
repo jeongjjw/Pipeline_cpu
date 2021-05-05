@@ -57,6 +57,14 @@ module control_unit (opcode, func_code, clk, reset_n, pc_write_cond, /* pc_write
 				halt = 1;
 				reg_write = 1'b0;
 			end
+			/*
+			else if(func_code == `INST_FUNC_JPR ) begin
+				reg_write = 1'b0;
+			end
+			else if(func_code == `INST_FUNC_JRL) begin
+				reg_write = 1'b1;
+				pc_src
+			end*/
 			else begin
 				wwd = 1'b0;
 				reg_write = 1'b1;
