@@ -26,11 +26,11 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//TODO: implement datapath of pipelined CPU
 	wire new_inst_o_M;
 
-	reg flag_J;
+	reg flag_J, flag_B;
 
 	//JPR or JRL
-	reg [3:0] count_J;
-	reg pc_write_JPR_JRL;
+	reg [3:0] count_J, count_B;
+	reg pc_write_JPR_JRL, pc_write_branch;
 
 	// register for output
 	reg read_m1_reg, read_m2_reg, read_m2_reg_temp;
@@ -248,7 +248,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  5 && (opcode == 15 && (func_code == 25 || func_code == 26)))) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  5 && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  5 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
@@ -281,13 +281,19 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
-
+	// (opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BL_Z)
 	always @(*) begin
 		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0)) begin 
 			pc_write_JPR_JRL=0;
 		end
+		if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && (count_B == 0) && (flag_B == 0)) begin 
+			pc_write_branch=0;
+		end
 		if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
 			flag_J = 0;
+		end
+		if(flag_B == 1'b1 && !(opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)) begin
+			flag_B = 0;
 		end
 		/*if(count_J == 4 && (flag_J == 1'b1)) begin
 			pc_write_JPR_JRL = 1'b1;
@@ -316,6 +322,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//	is_stall_reg = 0;
 		count_J =0;
 		flag_J = 1'b0;
+		pc_write_branch = 1'b1;
+		count_B  = 0;
+		flag_B = 1'b0;
 	end
 	
 	always @(posedge clk) begin
@@ -332,10 +341,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			pc_write_JPR_JRL <= 1'b1;
 			count_J <= 0;
 			flag_J <= 1'b0;
+			pc_write_branch = 1'b1;
+			count_B = 0;
+			flag_B = 0;
 		end
 
 		else begin
-			if(count != 1'b0 && pc_write == 1'b1 && pc_write_JPR_JRL == 1'b1) begin
+			if(count != 1'b0 && pc_write == 1'b1 && pc_write_JPR_JRL == 1'b1 && pc_write_branch == 1'b1) begin
 				if(branch_signal == 1'b1) begin
 					PC <= correctPC;
 				end
@@ -422,6 +434,20 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			if(count_J == 4) begin
 				flag_J <= 1'b1;
 				pc_write_JPR_JRL <= 1'b1;	
+			end
+
+
+			if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)  && (count_B != 5)) begin
+				count_B <= count_B + 1;
+			end
+			
+			if(count_B == 5) begin
+				count_B <= 1'b0;
+			end
+
+			if(count_B == 4) begin
+				flag_B <= 1'b1;
+				pc_write_branch <= 1'b1;	
 			end
 
 			/*if(flag_J == 1) begin
