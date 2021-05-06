@@ -88,7 +88,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// pipeline register_modules
 	IFID ifid(clk, inputIR_IFID, inputPC_IFID, outputIR_IFID, outputPC_IFID, ir_write, nextBranchPC, outputPredictPC_IFID);
 	IDEX idex(clk, outputPC_IFID, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX, inputWB_IDEX, outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX, outputWB_IDEX);
-	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
+	// EXMEM exmem(clk, inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPCFa_EXMEM, inputWB_EXMEM, outputWB_EXMEM);
 	EXMEM exmem(clk, outputPC_IDEX, inputALUOUT_EXMEM, inputB_EXMEM, inputWB_EXMEM, outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputWB_EXMEM, ALU_a, outputWWD_EX, inputInstr_IDEX/*inputInstr_EXMEM*/, outputInstr_EXMEM);
 	MEMWB memwb(clk, inputReadData_MEMWB, inputALUResult_MEMWB, inputWB_MEMWB, outputReadData_MEMWB, outputALUResult_MEMWB, outputWB_MEMWB, outputWWD_EX, outputWWD_MEM, outputPC_EXMEM, outputPC_WB, outputInstr_EXMEM, outputInstr_MEMWB);
 
@@ -122,16 +122,25 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//forwarding Register
 	reg [`WORD_SIZE - 1 : 0] forwarding_ALUout;
+	reg [`WORD_SIZE - 1 : 0] write_data_reg;
 
 	// assign for IF data
 	assign inputIR_IFID = data1;
 	//assign read1 = inputIR_IFID[11 : 10];
 	//assign read2 = inputIR_IFID[9 : 8];
 	//assign inputWB_IDEX = inputIR_IFID[7 : 6];
+
+	//EX/ MEM control
+	// wire pc_write_cond_i_E, pc_write_i_E, i_or_d_i_E, mem_read_i_E, mem_to_reg_i_E;
+	// wire mem_write_i_E, ir_write_i_E, pc_to_reg_i_E, pc_src_i_E, halt_i_E, wwd_i_E, new_inst_i_E, reg_write_i_E;
+	wire pc_write_cond_o_E, pc_write_o_E, i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E;
+	wire mem_write_o_E, ir_write_o_E, pc_to_reg_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E;
+	wire [1:0] pc_src_o_E;
 	
 	// assign for control
 	assign read_m1 = read_m1_reg;
 	assign read_m2 = read_m2_reg;
+	// assign read_m2 = mem_read_o_E;
 	assign address1 = PC;
 
 	//assign for IFID pipe
@@ -169,7 +178,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//assign for MEM data 
 	assign inputWB_MEMWB = outputWB_EXMEM;
 	assign address2 = outputALUOUT_EXMEM;
-	assign data2 = write_m2 ? outputB_EXMEM : 16'bz;
+	assign data2 = write_m2 ? inputB_EXMEM : 16'bz;
 	assign inputALUResult_MEMWB = outputALUOUT_EXMEM;
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
 	
@@ -188,12 +197,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// wire pc_write_cond_i, pc_write_i, mem_read_i, mem_to_reg_i, mem_write_i, ir_write_i, pc_src_i, pc_to_reg_i, halt_i, wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i;
 	wire pc_write_cond_o, pc_write_o, mem_read_o, mem_to_reg_o, mem_write_o, ir_write_o,  pc_to_reg_o, halt_o, wwd_o, new_inst_o, reg_write_o, alu_op_o, ALUsrc_o;
 	wire [1:0] pc_src_o;
-	//EX/ MEM control
-	// wire pc_write_cond_i_E, pc_write_i_E, i_or_d_i_E, mem_read_i_E, mem_to_reg_i_E;
-	// wire mem_write_i_E, ir_write_i_E, pc_to_reg_i_E, pc_src_i_E, halt_i_E, wwd_i_E, new_inst_i_E, reg_write_i_E;
-	wire pc_write_cond_o_E, pc_write_o_E, i_or_d_o_E, mem_read_o_E, mem_to_reg_o_E;
-	wire mem_write_o_E, ir_write_o_E, pc_to_reg_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E;
-	wire [1:0] pc_src_o_E;
+	
 	// mem/wb control
 	// wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
 	wire reg_write_o_M, wwd_o_M, halt_o_M, pc_to_reg_o_M;
@@ -202,12 +206,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	wire [`WORD_SIZE - 1: 0] write_data_final;
 
+	reg write_m2_reg;
+
 	//assign for MEM control
-	assign write_m2 = mem_write_o_E;
+	assign write_m2 = write_m2_reg;
 	//assign read_m2 = mem_read_o_E;
 
 	// datapath EX
-	mux4_1 srcA(forward_A, outputData1_IDEX, write_data, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
+	mux4_1 srcA(forward_A, outputData1_IDEX, /*write_data*/ write_data_reg, /*outputALUOUT_EXMEM*/ forwarding_ALUout, 16'b0, ALU_a);
 	mux4_1 srcB_temp(forward_B, outputData2_IDEX, write_data, forwarding_ALUout, 16'b0, ALU_b_temp);
 	mux2_1 srcWriteData(pc_to_reg_o_M, write_data, (outputPC_WB + 16'b1), write_data_final);
 	mux2_1 scrB(ALUsrc_o, ALU_b_temp, outputImm_IDEX ,ALU_b);
@@ -336,6 +342,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		flag_B = 1'b0;
 		branch_signal_reg_2 = 1'b0;
 		branch_signal_last = 1'b0;
+		write_m2_reg = 1'b0;
 	end
 	
 	always @(posedge clk) begin
@@ -357,6 +364,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			flag_B <= 1'b0;
 			branch_signal_reg_2 <= 1'b0;
 			branch_signal_last <= 1'b0 ;
+			write_m2_reg <= 1'b0;
 		end
 
 		else begin
@@ -383,6 +391,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			address1_reg <= PC;
 			count <= 1'b1;
 
+			write_data_reg <= write_data;
+			write_m2_reg <= mem_write_o_E;
 			
 			if(is_stall == 1'b1) begin
 				read_m1_reg <= 1'b0;
@@ -396,10 +406,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				read_m2_reg <= 1;
 				read_m2_reg_temp <= 1;
 			end
-			else if(read_m2_reg_temp ==1) begin
+			/*else if(read_m2_reg_temp ==1) begin
 				read_m2_reg_temp <= 0;
 				read_m2_reg <= 1;
-			end
+			end*/
 			else begin
 				read_m2_reg <= 0;
 			end

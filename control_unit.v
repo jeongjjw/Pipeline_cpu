@@ -211,7 +211,7 @@ module alu_control_unit(func_code, opcode, ALUOp, clk, funcCode, branchType);
 			end 
 			`LWD_OP, `SWD_OP: begin
 				branchType = 2'b0;
-				funcCode = 4'b1010;
+				funcCode = 4'b0000;
 			end
 			`BNE_OP: begin
 				branchType = 2'b00;
