@@ -225,7 +225,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	alu alu_module(ALU_a, ALU_b, funcCode, branchType, inputALUOUT_EXMEM, overflow_flag, bcond);
 
 	//Register file
-	register_file register_module(outputPC_WB, read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data_final, reg_write_o_M, clk, reset_n);
+	register_file register_module(outputPC_WB, num_inst, read_out1, read_out2, read1, read2, outputWB_MEMWB, write_data_final, reg_write_o_M, clk, reset_n);
 
 	//ImmGen Modul
 	ImmGen immgen_module(inputIR_IFID, inputImm_IDEX);	 
@@ -283,7 +283,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 
 	always @(*) begin
-		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && flag_J == 0) begin 
+		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0)) begin 
 			pc_write_JPR_JRL=0;
 		end
 		if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
