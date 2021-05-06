@@ -24,6 +24,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	output is_halted;
 
 	//TODO: implement datapath of pipelined CPU
+	wire new_inst_o_M;
+
+	reg flag_J;
+
+	//JPR or JRL
+	reg [3:0] count_J;
+	reg pc_write_JPR_JRL;
 
 	// register for output
 	reg read_m1_reg, read_m2_reg, read_m2_reg_temp;
@@ -189,7 +196,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] pc_src_o_E;
 	// mem/wb control
 	// wire reg_write_i_M, new_inst_i_M, wwd_i_M, halt_i_M;
-	wire reg_write_o_M, new_inst_o_M, wwd_o_M, halt_o_M, pc_to_reg_o_M;
+	wire reg_write_o_M, wwd_o_M, halt_o_M, pc_to_reg_o_M;
 	
 	wire branch_signal;
 
@@ -228,9 +235,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] pc_src_t;
 	wire is_stall_o;
 
-	//JPR or JRL
-	reg [3:0] count_J;
-	reg pc_write_JPR_JRL;
+	
 	//jsigs
 	wire Jsig_IFID_i, Jsig_IFID_o, Jsig_IDEX_o, Jsig_EXMEM_o, Jsig_MEMWB_o;
 	wire Jsig_last_o;
@@ -243,7 +248,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (opcode == 15 && (func_code == 25 || func_code == 26))) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
@@ -264,12 +269,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	IFID_Control IFID_Control_module(clk, Jsig_IFID_i, Jsig_IFID_o);
 	last_signal_pipe last_signal_pipe_module(clk, Jsig_MEMWB_o, Jsig_last_o);
 
-	reg flagRegister, count, flag_J;
 	assign is_halted = halt_o_M;//check this
 
 	// Branch Predictor
 	wire [`WORD_SIZE - 1:0] correctPC;
 	wire condition;
+
+	reg flagRegister, count;
 	
 	branch_predictor BP(clk, PC, correctPC, condition, nextBranchPC);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
@@ -277,13 +283,22 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 
 	always @(*) begin
-		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J != 1'b1)) begin 
+		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && flag_J == 0) begin 
 			pc_write_JPR_JRL=0;
 		end
-		if(count_J == 0 && (flag_J == 1'b1)) begin
+		if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
+			flag_J = 0;
+		end
+		/*if(count_J == 4 && (flag_J == 1'b1)) begin
 			pc_write_JPR_JRL = 1'b1;
 			
+		end*/
+		/*if(opcode == 15 && (func_code == 25 || func_code == 26)) begin
+			pc_write_JPR_JRL = 0;
 		end
+		else begin
+			pc_write_JPR_JRL = 1;
+		end*/
 	end
 
 	// Initalize
@@ -392,21 +407,27 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 			branch_signal_reg <= branch_signal;
 			
-			if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 4)) begin
+			if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 5)) begin
 				count_J <= count_J + 1;				
 			end
 
-			if(count_J == 1) begin
-				flag_J <= 1'b0;
-			end
-			
-			if(count_J == 3) begin
-				flag_J <= 1'b1;
-				// pc_write_JPR_JRL <= 1'b1;	
-			end
-			if(count_J ==4) begin
+			if(count_J ==5) begin
 				count_J <= 1'b0;
 			end
+
+			if(count_J == 0) begin
+				//flag_J <= 1'b0;
+			end
+			
+			if(count_J == 4) begin
+				flag_J <= 1'b1;
+				pc_write_JPR_JRL <= 1'b1;	
+			end
+
+			/*if(flag_J == 1) begin
+				flag_J <= 1'b0;
+			end*/
+			
 			/*if(count_J == 4) begin
 				count_J <=0;
 				pc_write_JPR_JRL <= 1;
