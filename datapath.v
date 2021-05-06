@@ -240,18 +240,21 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire Jsig_IFID_i, Jsig_IFID_o, Jsig_IDEX_o, Jsig_EXMEM_o, Jsig_MEMWB_o;
 	wire Jsig_last_o;
 
-	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_write_cond;
-	assign mem_read_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_read;
-	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_to_reg;
-	assign mem_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_write;
-	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_to_reg;
-	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
-	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
-	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  5 && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  5 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
-	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
-	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
-	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
+	// register for branch sig
+	reg branch_signal_reg_2, branch_signal_last;
+
+	assign pc_write_cond_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_write_cond;
+	assign mem_read_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_read;
+	assign mem_to_reg_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_to_reg;
+	assign mem_write_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : mem_write;
+	assign pc_to_reg_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_to_reg;
+	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
+	assign halt_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
+	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  5 && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  5 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
+	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
+	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
+	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
 
 	//control reg modules
 	IDEX_Control IDEX_Control_module(clk, pc_write_cond_t, /*pc_write,*/ mem_read_t, mem_to_reg_t, mem_write_t, /*ir_write,*/ pc_src_t, pc_to_reg_t, halt_t,
@@ -305,6 +308,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		else begin
 			pc_write_JPR_JRL = 1;
 		end*/
+		if(inputIR_IFID != inputInstr_IDEX && (inputInstr_IDEX[15:12] == 0 || inputInstr_IDEX[15:12] == 1 || inputInstr_IDEX[15:12] == 2 || inputInstr_IDEX[15:12] == 3) && branch_signal_reg ==1) begin
+			branch_signal_reg_2 = 1;
+		end
+		else begin
+			branch_signal_reg_2 = 0;
+		end
 	end
 
 	// Initalize
@@ -325,6 +334,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		pc_write_branch = 1'b1;
 		count_B  = 0;
 		flag_B = 1'b0;
+		branch_signal_reg_2 = 1'b0;
+		branch_signal_last = 1'b0;
 	end
 	
 	always @(posedge clk) begin
@@ -341,14 +352,16 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			pc_write_JPR_JRL <= 1'b1;
 			count_J <= 0;
 			flag_J <= 1'b0;
-			pc_write_branch = 1'b1;
-			count_B = 0;
-			flag_B = 0;
+			pc_write_branch <= 1'b1;
+			count_B <= 1'b0;
+			flag_B <= 1'b0;
+			branch_signal_reg_2 <= 1'b0;
+			branch_signal_last <= 1'b0 ;
 		end
 
 		else begin
 			if(count != 1'b0 && pc_write == 1'b1 && pc_write_JPR_JRL == 1'b1 && pc_write_branch == 1'b1) begin
-				if(branch_signal == 1'b1) begin
+				if(branch_signal_last == 1'b1) begin
 					PC <= correctPC;
 				end
 				else if(pc_src == 0) begin
@@ -450,6 +463,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				pc_write_branch <= 1'b1;	
 			end
 
+			if(count_B ==5 && branch_signal ==1) begin
+				branch_signal_last <= 1;
+			end
+			else begin
+				branch_signal_last <= 0;
+			end
 			/*if(flag_J == 1) begin
 				flag_J <= 1'b0;
 			end*/

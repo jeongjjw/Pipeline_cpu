@@ -146,6 +146,7 @@ module branch_sig(clk, predictPC, correctPC, branch_signal, instr);
 			end
 			else begin
 				branch_signal <= 1'b1;
+				// branch_signal <= 1'b0;
 			end	
 		end
 		else begin
