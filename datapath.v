@@ -248,7 +248,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (opcode == 15 && (func_code == 25 || func_code == 26))) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  5 && (opcode == 15 && (func_code == 25 || func_code == 26)))) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
