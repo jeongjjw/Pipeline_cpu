@@ -1,7 +1,7 @@
 `include "opcodes.v" 
  
  module branch_predictor(/*clk, reset_n, PC, is_flush, is_BJ_type, actual_next_PC, actual_PC, next_PC*/
- 						 count_B, clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC);
+ 						 count_B, clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC, branch_stall_signal, data1);
 
 	//input clk;
 	//input reset_n;
@@ -18,6 +18,8 @@
 	input [`WORD_SIZE-1:0] always_taken_addr;
 	input [`WORD_SIZE-1:0] prev_instr;
 	input [`WORD_SIZE-1:0] prev_PC;
+	input branch_stall_signal;
+	input [`WORD_SIZE-1:0] data1;
 
 	output [`WORD_SIZE-1:0] next_PC;
 
@@ -57,7 +59,7 @@
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
 		
-		if(count_B == 4) begin
+		/*if(count_B == 4 || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
 			if(update_taken ==1) begin
 				if(global_2bit_state[prev_index] !=3)
 					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
@@ -71,7 +73,7 @@
 			if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
 				BTB[prev_index][15:0] <= always_taken_addr;
 			end
-		end
+		end*/
 	end
 
 endmodule
