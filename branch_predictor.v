@@ -30,7 +30,7 @@
 	integer i;
 
 	initial begin
-		global_2bit_state = 2'b11;	
+		global_2bit_state = 3;	
 		for(i = 0; i <= 255; i = i+1) begin
 			BTB[i][23 : 16] = 8'b0;
 			BTB[i][15 : 0] = 16'hFFFF;
@@ -54,14 +54,14 @@
 	//2bit global saturation counter
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
-		if(update_taken ==1) begin
+		/* if(update_taken ==1) begin
 			if(global_2bit_state !=2)
 				global_2bit_state = global_2bit_state + 1;
 		end
 		if(update_taken ==0) begin
 			if(global_2bit_state !=0)
 				global_2bit_state = global_2bit_state - 1;
-		end
+		end */
 		
 		if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
 			BTB[prev_index][15:0] <= always_taken_addr;

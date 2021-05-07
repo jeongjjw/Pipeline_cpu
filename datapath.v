@@ -300,12 +300,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && (count_B == 0) && (flag_B == 0)) begin 
 			pc_write_branch=0;
 		end
+		/*
 		if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
 			flag_J = 0;
-		end
+		end*/
+		/*
 		if(flag_B == 1'b1 && !(opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)) begin
 			flag_B = 0;
-		end
+		end*/
 		/*if(count_J == 4 && (flag_J == 1'b1)) begin
 			pc_write_JPR_JRL = 1'b1;
 			
@@ -493,6 +495,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			end */
 			if(halt_o_M ==1) begin
 				halt_reg <= 1;
+			end
+			if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
+				flag_J = 0;
+			end
+			if(flag_B == 1'b1 && !(opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)) begin
+				flag_B = 0;
 			end
 		end
 	end
