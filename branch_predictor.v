@@ -179,3 +179,60 @@ module branch_sig(clk, predictPC, correctPC, branch_signal, instr);
 		end
 	end
 endmodule
+
+
+module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_b, branch_stall);
+	input [`WORD_SIZE - 1 : 0] data1;
+	input reg_write_o, reg_write_o_E, reg_write_o_M;
+	input [1 : 0] inputWB_EXMEM, inputWB_MEMWB, outputWB_MEMWB, read1, read2;
+	input [3 : 0] count_b;
+	output reg branch_stall;
+
+	wire [3 : 0] opcode;
+	assign opcode = data1[15 : 12];
+
+	initial begin
+		branch_stall = 1'b0;
+	end
+
+	always @(*) begin
+		if(count_b == 0) begin
+			case(opcode)
+				`BNE_OP, `BEQ_OP: begin
+					if(reg_write_o == 1'b1 && (read1 == inputWB_EXMEM || read2 == inputWB_EXMEM)) begin
+						branch_stall = 1'b1;
+					end
+					else if (reg_write_o_E == 1'b1 && (read1 == inputWB_MEMWB || read2 == inputWB_MEMWB)) begin
+						branch_stall = 1'b1;
+					end
+					else if (reg_write_o_M == 1'b1 && (read1 == outputWB_MEMWB || read2 == outputWB_MEMWB)) begin
+						branch_stall = 1'b1;
+					end
+					else begin
+						branch_stall = 1'b0;
+					end
+				end
+				`BGZ_OP, `BLZ_OP: begin
+					if(reg_write_o == 1'b1 && read1 == inputWB_EXMEM) begin
+						branch_stall = 1'b1;
+					end
+					else if (reg_write_o_E == 1'b1 && read1 == inputWB_MEMWB) begin
+						branch_stall = 1'b1;
+					end
+					else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
+						branch_stall = 1'b1;
+					end
+					else begin
+						branch_stall = 1'b0;
+					end
+				end
+				default:
+					branch_stall = 1'b0;
+			endcase
+		end
+		else begin
+			branch_stall = 1'b0;
+		end
+	end
+
+endmodule
