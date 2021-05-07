@@ -1,7 +1,7 @@
 `include "opcodes.v" 
  
  module branch_predictor(/*clk, reset_n, PC, is_flush, is_BJ_type, actual_next_PC, actual_PC, next_PC*/
- 						 clk, PC, correct_address, update_taken, next_PC);
+ 						 clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC);
 
 	//input clk;
 	//input reset_n;
@@ -14,17 +14,23 @@
 	input clk;
 	input [`WORD_SIZE-1:0] PC;
 	input update_taken;
-	input [`WORD_SIZE-1:0] correct_address;
+	input [`WORD_SIZE-1:0] always_taken_addr;
+	input [`WORD_SIZE-1:0] prev_instr;
+	input [`WORD_SIZE-1:0] prev_PC;
 
 	output [`WORD_SIZE-1:0] next_PC;
 
 	reg [23 : 0] BTB [255 : 0];//front 8 bits are Tag, 16 are BTB
 	reg [1:0] global_2bit_state;//00: strongly not taken, 01: not taken, 10: taken, 11: strongly taken
 	wire check_tag, check_initialize;
+	wire [3:0] opcode;
+	
+	assign opcode = prev_instr[15 : 12];
+	
 	integer i;
 
 	initial begin
-		global_2bit_state = 2'b0;	
+		global_2bit_state = 2'b11;	
 		for(i = 0; i <= 255; i = i+1) begin
 			BTB[i][23 : 16] = 8'b0;
 			BTB[i][15 : 0] = 16'hFFFF;
@@ -38,7 +44,10 @@
 	assign index = PC[7:0];
 	assign check_tag = (BTB[index][23:16] == tag);
 	assign check_initialize = (BTB[index][15:0] != 16'hFFFF);
-	assign mux_control_wire =  (check_tag && (global_2bit_state[1] ==1 ) && check_initialize);
+	assign mux_control_wire =  (check_tag && (global_2bit_state[1] ==1) && check_initialize);
+
+	wire [7:0] prev_index;
+	assign prev_index = prev_PC[7:0];
 
 	assign next_PC = (mux_control_wire) ? (BTB[index][15:0]) : (PC + 1);
 
@@ -52,6 +61,10 @@
 		if(update_taken ==0) begin
 			if(global_2bit_state !=0)
 				global_2bit_state = global_2bit_state - 1;
+		end
+		
+		if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
+			BTB[prev_index][15:0] <= always_taken_addr;
 		end
 	end
 
@@ -99,15 +112,17 @@ module checkCondition(clk, instr, read_out1, read_out2, condition);
 endmodule
 
 
-module calc_correct(clk, instr, bcond, Imm, PC, correctPC);
+module calc_correct(clk, instr, bcond, Imm, PC, correctPC, always_taken_addr );
 	input clk;
 	input bcond;
 	input [15:0] instr;
 	input [15:0] Imm, PC;
 	output reg [15:0] correctPC;
+	output reg [`WORD_SIZE - 1: 0] always_taken_addr;
 
 	initial begin
-		correctPC =0;
+		correctPC = 16'b0;
+		always_taken_addr = 16'b0;
 	end
 
 	wire [3:0] opcode;
@@ -120,7 +135,11 @@ module calc_correct(clk, instr, bcond, Imm, PC, correctPC);
 			else begin
 				correctPC = PC + 1;
 			end
+
+			always_taken_addr = PC + Imm;
 		end
+		
+
 	end
 endmodule
 

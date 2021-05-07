@@ -278,7 +278,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E, Jsig_EXMEM_o,Jsig_MEMWB_o);
 	IFID_Control IFID_Control_module(clk, Jsig_IFID_i, Jsig_IFID_o);
-	last_signal_pipe last_signal_pipe_module(clk, Jsig_MEMWB_o, Jsig_last_o);
 	
 	reg halt_reg;
 	assign is_halted = halt_reg;//check this
@@ -286,12 +285,12 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// Branch Predictor
 	wire [`WORD_SIZE - 1:0] correctPC;
 	wire condition;
-
+	wire [`WORD_SIZE - 1 : 0] always_taken_addr;
 	reg flagRegister, count;
 	
-	branch_predictor BP(clk, PC, correctPC, condition, nextBranchPC);
+	branch_predictor BP(clk, PC, always_taken_addr, /*instr*/data1 ,PC, condition, nextBranchPC);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
-	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC);
+	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC, always_taken_addr);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	// (opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BL_Z)
 	always @(*) begin

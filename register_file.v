@@ -278,17 +278,3 @@ module MEMWB_Control(clk, reg_write_o, reg_write_i, new_inst_i, new_inst_o, wwd_
 	end
 	
 endmodule
-
-
-module last_signal_pipe(clk, Jsig_last_i, Jsig_last_o);
-	input clk, Jsig_last_i;
-	output reg Jsig_last_o;
-
-	initial begin
-		Jsig_last_o = 0;
-	end
-	always@(negedge clk) begin
-		Jsig_last_o <= Jsig_last_i;
-	end	
-		
-endmodule
