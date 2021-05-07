@@ -279,8 +279,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E, Jsig_EXMEM_o,Jsig_MEMWB_o);
 	IFID_Control IFID_Control_module(clk, Jsig_IFID_i, Jsig_IFID_o);
 	last_signal_pipe last_signal_pipe_module(clk, Jsig_MEMWB_o, Jsig_last_o);
-
-	assign is_halted = halt_o_M;//check this
+	
+	reg halt_reg;
+	assign is_halted = halt_reg;//check this
 
 	// Branch Predictor
 	wire [`WORD_SIZE - 1:0] correctPC;
@@ -345,6 +346,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 		branch_signal_reg_2 = 1'b0;
 		branch_signal_last = 1'b0;
 		write_m2_reg = 1'b0;
+		halt_reg = 1'b0;
 	end
 	
 	always @(posedge clk) begin
@@ -367,6 +369,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			branch_signal_reg_2 <= 1'b0;
 			branch_signal_last <= 1'b0 ;
 			write_m2_reg <= 1'b0;
+			halt_reg <= 1'b0;
 		end
 
 		else begin
@@ -489,6 +492,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				count_J <=0;
 				pc_write_JPR_JRL <= 1;
 			end */
+			if(halt_o_M ==1) begin
+				halt_reg <= 1;
+			end
 		end
 	end
 
