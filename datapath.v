@@ -24,6 +24,9 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	output is_halted;
 
 	//TODO: implement datapath of pipelined CPU
+	wire [`WORD_SIZE-1:0] read_out2;
+	wire [`WORD_SIZE - 1 : 0] inputData2_IDEX, outputData2_IDEX, inputB_EXMEM, outputB_EXMEM;
+
 	wire new_inst_o_M;
 
 	reg flag_J, flag_B;
@@ -45,14 +48,14 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [15:0] outputIR_IFID, outputPC_IFID;
 
 	//wire into ID EX
-	wire [`WORD_SIZE - 1 : 0] inputPC_IDEX, inputData1_IDEX, inputData2_IDEX, inputImm_IDEX, inputInstr_IDEX;
+	wire [`WORD_SIZE - 1 : 0] inputPC_IDEX, inputData1_IDEX, inputImm_IDEX, inputInstr_IDEX;
 	wire [1 : 0] inputWB_IDEX, outputWB_IDEX;
-	wire [`WORD_SIZE - 1 : 0] outputPC_IDEX, outputData1_IDEX, outputData2_IDEX, outputImm_IDEX, outputInstr_IDEX;
+	wire [`WORD_SIZE - 1 : 0] outputPC_IDEX, outputData1_IDEX, outputImm_IDEX, outputInstr_IDEX;
 
 	//wire into EX MEM
-	wire [15:0] inputPC_EXMEM, inputALUOUT_EXMEM, inputB_EXMEM;
+	wire [15:0] inputPC_EXMEM, inputALUOUT_EXMEM;
 	wire [1 : 0] inputWB_EXMEM;
-	wire [15:0] outputB_EXMEM, outputALUOUT_EXMEM, outputPC_EXMEM, outputPC_WB;
+	wire [15:0] outputALUOUT_EXMEM, outputPC_EXMEM, outputPC_WB;
 	wire [1 : 0] outputWB_EXMEM;
 
 
@@ -118,7 +121,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [1:0] dest;
 	wire [`WORD_SIZE-1:0] write_data, write_data_t;
 	wire [`WORD_SIZE-1:0] read_out1;
-	wire [`WORD_SIZE-1:0] read_out2;
 
 	//forwarding Register
 	reg [`WORD_SIZE - 1 : 0] forwarding_ALUout;
@@ -178,7 +180,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	//assign for MEM data 
 	assign inputWB_MEMWB = outputWB_EXMEM;
 	assign address2 = outputALUOUT_EXMEM;
-	assign data2 = write_m2 ? inputB_EXMEM : 16'bz;
+	assign data2 = write_m2 ? outputB_EXMEM : 16'bz;
 	assign inputALUResult_MEMWB = outputALUOUT_EXMEM;
 	assign inputReadData_MEMWB = data2;//use data2 directly for forwarding unit and reg_write_data
 	
