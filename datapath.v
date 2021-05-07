@@ -24,7 +24,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	output is_halted;
 
 	//TODO: implement datapath of pipelined CPU
-	wire branch_stall_signal;
+	wire branch_stall_signal, JPR_JRL_stall_signal;
 
 	wire [`WORD_SIZE-1:0] read_out2;
 	wire [`WORD_SIZE - 1 : 0] inputData2_IDEX, outputData2_IDEX, inputB_EXMEM, outputB_EXMEM;
@@ -296,7 +296,8 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	// (opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BL_Z)
 
-	 branch_stall branch_stall_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_B, branch_stall_signal);
+	branch_stall branch_stall_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_B, branch_stall_signal);
+	JPR_JRL_Stall J_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1);
 
 	always @(*) begin
 		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0)) begin 

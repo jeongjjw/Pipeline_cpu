@@ -59,7 +59,7 @@
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
 		
-		/*if(count_B == 4 || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
+		if(count_B == 4 || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
 			if(update_taken ==1) begin
 				if(global_2bit_state[prev_index] !=3)
 					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
@@ -73,7 +73,7 @@
 			if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
 				BTB[prev_index][15:0] <= always_taken_addr;
 			end
-		end*/
+		end
 	end
 
 endmodule
@@ -234,6 +234,46 @@ module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_ME
 		end
 		else begin
 			branch_stall = 1'b0;
+		end
+	end
+endmodule
+
+
+module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1);
+	input [`WORD_SIZE - 1 : 0] data1;
+	input reg_write_o, reg_write_o_E, reg_write_o_M;
+	input [1 : 0] inputWB_EXMEM, inputWB_MEMWB, outputWB_MEMWB, read1;
+	input [3 : 0] count_J;
+	output reg JPR_JRL_stall_signal;
+
+	wire [3 : 0] opcode;
+	wire [5 : 0] funcCode;
+	assign opcode = data1[15 : 12];
+	assign funcCode = data1[5 : 0];
+
+	initial begin
+		JPR_JRL_stall_signal = 1'b0;
+	end
+
+	always @(*) begin
+		if(count_J == 0) begin
+			if (opcode == 15 && (funcCode == `INST_FUNC_JPR || funcCode == `INST_FUNC_JRL)) begin
+				if(reg_write_o == 1'b1 && read1 == inputWB_EXMEM) begin
+					JPR_JRL_stall_signal = 1'b1;
+				end
+				else if (reg_write_o_E == 1'b1 && read1 == inputWB_MEMWB) begin
+					JPR_JRL_stall_signal = 1'b1;
+				end
+				else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
+					JPR_JRL_stall_signal = 1'b1;
+				end
+				else begin
+					JPR_JRL_stall_signal = 1'b0;
+				end
+			end
+		end
+		else begin
+			JPR_JRL_stall_signal = 1'b0;
 		end
 	end
 
