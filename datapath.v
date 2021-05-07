@@ -300,7 +300,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	JPR_JRL_Stall J_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1);
 
 	always @(*) begin
-		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0)) begin 
+		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0) && (JPR_JRL_stall_signal == 1)) begin 
 			pc_write_JPR_JRL=0;
 		end
 		if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && (count_B == 0) && (flag_B == 0) && (branch_stall_signal == 1)) begin 
@@ -453,17 +453,15 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			end
 
 			branch_signal_reg <= branch_signal;
-			
-			if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 3)) begin
-				count_J <= count_J + 1;				
-			end
 
+			if(pc_write_JPR_JRL == 1'b0) begin
+				if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 3)) begin
+					count_J <= count_J + 1;				
+				end
+			end
+			
 			if(count_J ==3) begin
 				count_J <= 1'b0;
-			end
-
-			if(count_J == 0) begin
-				//flag_J <= 1'b0;
 			end
 			
 			if(count_J == 2) begin
