@@ -1,7 +1,7 @@
 `include "opcodes.v" 
  
  module branch_predictor(/*clk, reset_n, PC, is_flush, is_BJ_type, actual_next_PC, actual_PC, next_PC*/
- 						 clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC);
+ 						 count_B, clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC);
 
 	//input clk;
 	//input reset_n;
@@ -11,6 +11,7 @@
 	//input [`WORD_SIZE-1:0] actual_next_PC; //computed actual next PC from branch resolve stage
 	//input [`WORD_SIZE-1:0] actual_PC; // PC from branch resolve stage
 	
+	input [3:0] count_B;
 	input clk;
 	input [`WORD_SIZE-1:0] PC;
 	input update_taken;
@@ -21,7 +22,7 @@
 	output [`WORD_SIZE-1:0] next_PC;
 
 	reg [23 : 0] BTB [255 : 0];//front 8 bits are Tag, 16 are BTB
-	reg [1:0] global_2bit_state;//00: strongly not taken, 01: not taken, 10: taken, 11: strongly taken
+	reg [1:0] global_2bit_state [255 : 0];//00: strongly not taken, 01: not taken, 10: taken, 11: strongly taken
 	wire check_tag, check_initialize;
 	wire [3:0] opcode;
 	
@@ -30,10 +31,11 @@
 	integer i;
 
 	initial begin
-		global_2bit_state = 3;	
+		// global_2bit_state = 1;	
 		for(i = 0; i <= 255; i = i+1) begin
 			BTB[i][23 : 16] = 8'b0;
 			BTB[i][15 : 0] = 16'hFFFF;
+			global_2bit_state[i] = 2'b0;
 		end
 	end
 
@@ -44,7 +46,7 @@
 	assign index = PC[7:0];
 	assign check_tag = (BTB[index][23:16] == tag);
 	assign check_initialize = (BTB[index][15:0] != 16'hFFFF);
-	assign mux_control_wire =  (check_tag && (global_2bit_state[1] ==1) && check_initialize);
+	assign mux_control_wire =  (check_tag && (global_2bit_state[index][1] ==1) && check_initialize);
 
 	wire [7:0] prev_index;
 	assign prev_index = prev_PC[7:0];
@@ -54,17 +56,21 @@
 	//2bit global saturation counter
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
-		/* if(update_taken ==1) begin
-			if(global_2bit_state !=2)
-				global_2bit_state = global_2bit_state + 1;
-		end
-		if(update_taken ==0) begin
-			if(global_2bit_state !=0)
-				global_2bit_state = global_2bit_state - 1;
-		end */
 		
-		if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
-			BTB[prev_index][15:0] <= always_taken_addr;
+		if(count_B == 5) begin
+			if(update_taken ==1) begin
+				if(global_2bit_state[prev_index] !=3)
+					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
+			end
+
+			if(update_taken ==0) begin
+				if(global_2bit_state[prev_index] !=0)
+					global_2bit_state[prev_index] = global_2bit_state[prev_index] - 1;
+			end 
+
+			if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
+				BTB[prev_index][15:0] <= always_taken_addr;
+			end
 		end
 	end
 

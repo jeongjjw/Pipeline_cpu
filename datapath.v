@@ -288,7 +288,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [`WORD_SIZE - 1 : 0] always_taken_addr;
 	reg flagRegister, count;
 	
-	branch_predictor BP(clk, PC, always_taken_addr, /*instr*/data1 ,PC, condition, nextBranchPC);
+	branch_predictor BP(count_B, clk, PC, always_taken_addr, /*instr*/data1 ,PC, condition, nextBranchPC);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC, always_taken_addr);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
