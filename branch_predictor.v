@@ -57,7 +57,7 @@
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
 		
-		if(count_B == 5) begin
+		if(count_B == 4) begin
 			if(update_taken ==1) begin
 				if(global_2bit_state[prev_index] !=3)
 					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
