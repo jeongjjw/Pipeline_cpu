@@ -280,7 +280,6 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			mem_write_o_E, /*ir_write_o_E,*/ pc_to_reg_o_E, pc_src_o_E, halt_o_E, wwd_o_E, new_inst_o_E, reg_write_o_E, Jsig_IDEX_o, Jsig_EXMEM_o);
 
 	MEMWB_Control MEMWB_Control_module(clk, reg_write_o_M, reg_write_o_E, new_inst_o_E, new_inst_o_M, wwd_o_E, wwd_o_M, halt_o_M, halt_o_E, mem_to_reg_o_M, mem_to_reg_o_E, pc_to_reg_o_M, pc_to_reg_o_E, Jsig_EXMEM_o,Jsig_MEMWB_o);
-	IFID_Control IFID_Control_module(clk, Jsig_IFID_i, Jsig_IFID_o);
 	
 	reg halt_reg;
 	assign is_halted = halt_reg;//check this

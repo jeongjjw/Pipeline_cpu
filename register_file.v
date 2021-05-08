@@ -188,19 +188,6 @@ module MEMWB(clk, inputReadData, inputALUResult, inputWB, outputReadData, output
 	end
 endmodule
 
-module IFID_Control (clk, Jsig_IFID_i, Jsig_IFID_o);
-	input Jsig_IFID_i, clk;
-	output reg Jsig_IFID_o;
-
-	initial begin
-		Jsig_IFID_o = 1'b0;
-	end
-
-	always @(negedge clk) begin
-		Jsig_IFID_o <= Jsig_IFID_i;
-	end 
-endmodule
-
 module IDEX_Control (clk, pc_write_cond_i, /*pc_write_i,*/ mem_read_i, mem_to_reg_i, mem_write_i, /*ir_write_i,*/ pc_src_i, pc_to_reg_i, halt_i,
 		wwd_i, new_inst_i, reg_write_i, alu_op_i, ALUsrc_i, 
 		pc_write_cond_o, /*pc_write_o,*/ mem_read_o, mem_to_reg_o, mem_write_o, /*ir_write_o,*/ pc_src_o, pc_to_reg_o, halt_o,
