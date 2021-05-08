@@ -279,11 +279,11 @@ module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_M
 				end
 				else if (reg_write_o_E == 1'b1 && read1 == inputWB_MEMWB) begin
 					JPR_JRL_stall_signal = 1'b1;
-					count_J_limit = 3;
+					count_J_limit = 2;
 				end
 				else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
 					JPR_JRL_stall_signal = 1'b1;
-					count_J_limit = 2;
+					count_J_limit = 1;
 				end
 				else begin
 					JPR_JRL_stall_signal = 1'b0;
