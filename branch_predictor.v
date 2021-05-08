@@ -29,15 +29,13 @@
 	reg [1:0] global_2bit_state;
 	wire check_tag, check_initialize;
 	wire [3:0] opcode;
-	reg global_1bit_state;
-
+	
 	assign opcode = prev_instr[15 : 12];
 	
 	integer i;
 
 	initial begin
-		global_2bit_state = 0;	
-		//global_1bit_state = 1;
+		global_2bit_state = 1;	
 		for(i = 0; i <= 255; i = i+1) begin
 			BTB[i][23 : 16] = 8'b0;
 			BTB[i][15 : 0] = 16'hFFFF;
@@ -68,7 +66,6 @@
 				if(global_2bit_state/*[prev_index]*/ !=3) begin
 					// global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
 					global_2bit_state <= global_2bit_state + 1;
-					//global_1bit_state <= 1;
 				end
 			end
 
@@ -76,7 +73,6 @@
 				if(global_2bit_state/*[prev_index]*/ !=0) begin
 					// global_2bit_state[prev_index] = global_2bit_state[prev_index] - 1;
 					global_2bit_state <= global_2bit_state - 1;
-					//global_1bit_state <= 0;
 				end
 			end
 			//hysteresis
