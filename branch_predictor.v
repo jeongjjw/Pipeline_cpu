@@ -25,20 +25,23 @@
 	output [`WORD_SIZE-1:0] next_PC;
 
 	reg [23 : 0] BTB [255 : 0];//front 8 bits are Tag, 16 are BTB
-	reg [1:0] global_2bit_state [255 : 0];//00: strongly not taken, 01: not taken, 10: taken, 11: strongly taken
+	// reg [1:0] global_2bit_state [255 : 0];//00: strongly not taken, 01: not taken, 10: taken, 11: strongly taken
+	reg [1:0] global_2bit_state;
 	wire check_tag, check_initialize;
 	wire [3:0] opcode;
-	
+	reg global_1bit_state;
+
 	assign opcode = prev_instr[15 : 12];
 	
 	integer i;
 
 	initial begin
-		// global_2bit_state = 1;	
+		global_2bit_state = 0;	
+		//global_1bit_state = 1;
 		for(i = 0; i <= 255; i = i+1) begin
 			BTB[i][23 : 16] = 8'b0;
 			BTB[i][15 : 0] = 16'hFFFF;
-			global_2bit_state[i] = 2'b0;
+			// global_2bit_state[i] = 3;
 		end
 	end
 
@@ -49,7 +52,7 @@
 	assign index = PC[7:0];
 	assign check_tag = (BTB[index][23:16] == tag);
 	assign check_initialize = (BTB[index][15:0] != 16'hFFFF);
-	assign mux_control_wire =  (check_tag && (global_2bit_state[index][1] ==1) && check_initialize);
+	assign mux_control_wire =  (check_tag && (/*global_2bit_state[index][1] ==1*/global_2bit_state[1] ==1) && check_initialize);
 
 	wire [7:0] prev_index;
 	assign prev_index = prev_PC[7:0];
@@ -62,18 +65,52 @@
 		
 		if(count_B == count_B_limit || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
 			if(update_taken ==1) begin
-				if(global_2bit_state[prev_index] !=3)
-					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
+				if(global_2bit_state/*[prev_index]*/ !=3) begin
+					// global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
+					global_2bit_state <= global_2bit_state + 1;
+					//global_1bit_state <= 1;
+				end
 			end
 
 			if(update_taken ==0) begin
-				if(global_2bit_state[prev_index] !=0)
-					global_2bit_state[prev_index] = global_2bit_state[prev_index] - 1;
-			end 
-
+				if(global_2bit_state/*[prev_index]*/ !=0) begin
+					// global_2bit_state[prev_index] = global_2bit_state[prev_index] - 1;
+					global_2bit_state <= global_2bit_state - 1;
+					//global_1bit_state <= 0;
+				end
+			end
+			//hysteresis
+			/*case(global_2bit_state)
+				2'd0: begin
+					if(update_taken ==1)
+						global_2bit_state <= 1;
+					else
+						global_2bit_state <= 0;
+				end
+				2'd1: begin
+					if(update_taken ==1)
+						global_2bit_state <= 3;
+					else
+						global_2bit_state <= 0;
+				end
+				2'd2: begin		
+					if(update_taken ==1)
+						global_2bit_state <= 3;
+					else
+						global_2bit_state <= 0;
+				end
+				2'd3: begin
+					if(update_taken ==1)
+						global_2bit_state <= 3;
+					else
+						global_2bit_state <= 2;
+				end
+			endcase */
+			
+			
 			if(opcode == 4'd0 || opcode == 4'd1 || opcode == 4'd2 || opcode == 4'd3) begin
 				BTB[prev_index][15:0] <= always_taken_addr;
-			end
+			end 
 		end
 	end
 
