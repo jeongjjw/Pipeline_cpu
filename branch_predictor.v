@@ -239,12 +239,13 @@ module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_ME
 endmodule
 
 
-module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1);
+module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1, count_J_limit);
 	input [`WORD_SIZE - 1 : 0] data1;
 	input reg_write_o, reg_write_o_E, reg_write_o_M;
 	input [1 : 0] inputWB_EXMEM, inputWB_MEMWB, outputWB_MEMWB, read1;
 	input [3 : 0] count_J;
 	output reg JPR_JRL_stall_signal;
+	output reg [3 : 0] count_J_limit;
 
 	wire [3 : 0] opcode;
 	wire [5 : 0] funcCode;
@@ -253,6 +254,7 @@ module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_M
 
 	initial begin
 		JPR_JRL_stall_signal = 1'b0;
+		count_J_limit = 3;
 	end
 
 	always @(*) begin
@@ -260,15 +262,19 @@ module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_M
 			if (opcode == 15 && (funcCode == `INST_FUNC_JPR || funcCode == `INST_FUNC_JRL)) begin
 				if(reg_write_o == 1'b1 && read1 == inputWB_EXMEM) begin
 					JPR_JRL_stall_signal = 1'b1;
+					count_J_limit = 3;
 				end
 				else if (reg_write_o_E == 1'b1 && read1 == inputWB_MEMWB) begin
 					JPR_JRL_stall_signal = 1'b1;
+					count_J_limit = 3;
 				end
 				else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
 					JPR_JRL_stall_signal = 1'b1;
+					count_J_limit = 3;
 				end
 				else begin
 					JPR_JRL_stall_signal = 1'b0;
+					count_J_limit = 3;
 				end
 			end
 		end

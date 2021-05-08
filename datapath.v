@@ -35,6 +35,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//JPR or JRL
 	reg [3:0] count_J, count_B;
+	wire [3:0] count_J_limit;
 	reg pc_write_JPR_JRL, pc_write_branch;
 
 	// register for output
@@ -261,7 +262,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  3 && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  4 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  /*3*/ count_J_limit && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  4 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
@@ -297,7 +298,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	// (opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BL_Z)
 
 	branch_stall branch_stall_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_B, branch_stall_signal);
-	JPR_JRL_Stall J_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1);
+	JPR_JRL_Stall J_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1, count_J_limit);
 
 	always @(*) begin
 		if((opcode == 15 && (func_code == 25 || func_code == 26)) && (count_J == 0) && (flag_J == 0) && (JPR_JRL_stall_signal == 1)) begin 
@@ -455,16 +456,16 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			branch_signal_reg <= branch_signal;
 
 			if(pc_write_JPR_JRL == 1'b0) begin
-				if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != 3)) begin
+				if(opcode == 15 && (func_code == 25 || func_code == 26) && (count_J != /*3*/ count_J_limit)) begin
 					count_J <= count_J + 1;				
 				end
 			end
-			
-			if(count_J ==3) begin
+
+			if(count_J == /*3*/ count_J_limit) begin
 				count_J <= 1'b0;
 			end
 			
-			if(count_J == 2) begin
+			if(count_J == /*2*/ count_J_limit - 1) begin
 				flag_J <= 1'b1;
 				pc_write_JPR_JRL <= 1'b1;	
 			end
