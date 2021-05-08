@@ -1,7 +1,7 @@
 `include "opcodes.v" 
  
  module branch_predictor(/*clk, reset_n, PC, is_flush, is_BJ_type, actual_next_PC, actual_PC, next_PC*/
- 						 count_B, clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC, branch_stall_signal, data1);
+ 						 count_B, clk, PC, always_taken_addr, prev_instr, prev_PC, update_taken, next_PC, branch_stall_signal, data1, count_B_limit);
 
 	//input clk;
 	//input reset_n;
@@ -20,6 +20,7 @@
 	input [`WORD_SIZE-1:0] prev_PC;
 	input branch_stall_signal;
 	input [`WORD_SIZE-1:0] data1;
+	input [3 : 0] count_B_limit;
 
 	output [`WORD_SIZE-1:0] next_PC;
 
@@ -59,7 +60,7 @@
 	always@(posedge clk) begin
 		// $display("BTB index : %b", BTB[index][15:0]);
 		
-		if(count_B == 4 || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
+		if(count_B == count_B_limit || ((opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BLZ_OP) && count_B == 0 && branch_stall_signal == 0)) begin
 			if(update_taken ==1) begin
 				if(global_2bit_state[prev_index] !=3)
 					global_2bit_state[prev_index] = global_2bit_state[prev_index] + 1;
@@ -183,18 +184,20 @@ module branch_sig(clk, predictPC, correctPC, branch_signal, instr);
 endmodule
 
 
-module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_b, branch_stall);
+module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_b, branch_stall, count_B_limit);
 	input [`WORD_SIZE - 1 : 0] data1;
 	input reg_write_o, reg_write_o_E, reg_write_o_M;
 	input [1 : 0] inputWB_EXMEM, inputWB_MEMWB, outputWB_MEMWB, read1, read2;
 	input [3 : 0] count_b;
 	output reg branch_stall;
+	output reg [3 : 0] count_B_limit;
 
 	wire [3 : 0] opcode;
 	assign opcode = data1[15 : 12];
 
 	initial begin
 		branch_stall = 1'b0;
+		count_B_limit = 4;
 	end
 
 	always @(*) begin
@@ -203,33 +206,43 @@ module branch_stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_ME
 				`BNE_OP, `BEQ_OP: begin
 					if(reg_write_o == 1'b1 && (read1 == inputWB_EXMEM || read2 == inputWB_EXMEM)) begin
 						branch_stall = 1'b1;
+						count_B_limit = 4;
 					end
 					else if (reg_write_o_E == 1'b1 && (read1 == inputWB_MEMWB || read2 == inputWB_MEMWB)) begin
 						branch_stall = 1'b1;
+						count_B_limit = 3;
 					end
 					else if (reg_write_o_M == 1'b1 && (read1 == outputWB_MEMWB || read2 == outputWB_MEMWB)) begin
 						branch_stall = 1'b1;
+						count_B_limit = 2;
 					end
 					else begin
 						branch_stall = 1'b0;
+						count_B_limit = 4;
 					end
 				end
 				`BGZ_OP, `BLZ_OP: begin
 					if(reg_write_o == 1'b1 && read1 == inputWB_EXMEM) begin
 						branch_stall = 1'b1;
+						count_B_limit = 4;
 					end
 					else if (reg_write_o_E == 1'b1 && read1 == inputWB_MEMWB) begin
 						branch_stall = 1'b1;
+						count_B_limit = 3;
 					end
 					else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
 						branch_stall = 1'b1;
+						count_B_limit = 2;
 					end
 					else begin
 						branch_stall = 1'b0;
+						count_B_limit = 4;
 					end
 				end
-				default:
+				default: begin
 					branch_stall = 1'b0;
+					count_B_limit = 4;
+				end
 			endcase
 		end
 		else begin
@@ -270,7 +283,7 @@ module JPR_JRL_Stall(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_M
 				end
 				else if (reg_write_o_M == 1'b1 && read1 == outputWB_MEMWB) begin
 					JPR_JRL_stall_signal = 1'b1;
-					count_J_limit = 3;
+					count_J_limit = 2;
 				end
 				else begin
 					JPR_JRL_stall_signal = 1'b0;

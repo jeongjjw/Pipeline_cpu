@@ -35,7 +35,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 
 	//JPR or JRL
 	reg [3:0] count_J, count_B;
-	wire [3:0] count_J_limit;
+	wire [3:0] count_J_limit, count_B_limit;
 	reg pc_write_JPR_JRL, pc_write_branch;
 
 	// register for output
@@ -262,7 +262,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	assign pc_src_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : pc_src;
 	assign halt_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : halt;
 	assign wwd_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : wwd;
-	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  /*3*/ count_J_limit && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  4 && (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
+	assign new_inst_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0 || (count_J ==  /*3*/ count_J_limit && (opcode == 15 && (func_code == 25 || func_code == 26))) || pc_write_branch == 1'b0 || (count_B ==  count_B_limit/*4 */&& (opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP))) ? 1'b0 : new_inst;
 	assign reg_write_t = (is_stall == 1'b1 || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : reg_write;
 	assign alu_op_t = (is_stall == 1'b1|| branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : alu_op;
 	assign ALUsrc_t = (is_stall == 1'b1  || branch_signal_reg_2 == 1'b1 || pc_write_JPR_JRL == 1'b0) ? 1'b0 : ALUsrc;
@@ -291,13 +291,13 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 	wire [`WORD_SIZE - 1 : 0] always_taken_addr;
 	reg flagRegister, count;
 	
-	branch_predictor BP(count_B, clk, PC, always_taken_addr, /*instr*/data1 ,PC, condition, nextBranchPC, branch_stall_signal, data1);
+	branch_predictor BP(count_B, clk, PC, always_taken_addr, /*instr*/data1 ,PC, condition, nextBranchPC, branch_stall_signal, data1, count_B_limit);
 	checkCondition checkCondition_module(clk, inputIR_IFID, read_out1, read_out2, condition);
 	calc_correct calc_correct_module(clk, inputIR_IFID,  condition, inputImm_IDEX, outputPC_IFID, correctPC, always_taken_addr);
 	branch_sig b_sig_module(clk, outputPredictPC_IFID, correctPC, branch_signal, inputIR_IFID);
 	// (opcode == `BNE_OP || opcode == `BEQ_OP || opcode == `BGZ_OP || opcode == `BL_Z)
 
-	branch_stall branch_stall_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_B, branch_stall_signal);
+	branch_stall branch_stall_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, read1, read2, count_B, branch_stall_signal, count_B_limit);
 	JPR_JRL_Stall J_module(data1, reg_write_o, inputWB_EXMEM, reg_write_o_E, inputWB_MEMWB, reg_write_o_M, outputWB_MEMWB, count_J, JPR_JRL_stall_signal, read1, count_J_limit);
 
 	always @(*) begin
@@ -471,17 +471,17 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 			end
 
 			if(pc_write_branch == 1'b0) begin
-				if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)  && (count_B != 4)) begin
+				if((opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)  && (count_B != /*4*/count_B_limit)) begin
 					count_B <= count_B + 1;
 				end
 
-				if(count_B == 3) begin
+				if(count_B == /*3*/ (count_B_limit - 1)) begin
 					flag_B <= 1'b1;
 					pc_write_branch <= 1'b1;	
 				end			
 			end
 
-			if(count_B ==4 && branch_signal ==1) begin
+			if(count_B == /*4*/count_B_limit && branch_signal ==1) begin
 				branch_signal_last <= 1;
 			end
 			
@@ -489,7 +489,7 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				branch_signal_last <= 0;
 			end
 					
-			if(count_B == 4) begin
+			if(count_B == /*4*/ count_B_limit) begin
 				count_B <= 1'b0;
 			end
 			/*if(flag_J == 1) begin
