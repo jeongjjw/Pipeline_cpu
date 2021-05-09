@@ -503,10 +503,10 @@ module datapath(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, addre
 				halt_reg <= 1;
 			end
 			if(flag_J == 1'b1 && !(opcode == 15 && (func_code == 25 || func_code == 26))) begin
-				flag_J = 0;
+				flag_J <= 0;
 			end
 			if(flag_B == 1'b1 && !(opcode == `BEQ_OP || opcode == `BNE_OP || opcode == `BGZ_OP || opcode == `BLZ_OP)) begin
-				flag_B = 0;
+				flag_B <= 0;
 			end
 		end
 	end
